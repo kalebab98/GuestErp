@@ -144,7 +144,7 @@ export const BASE_CATEGORIES: Category[] = [
 // Exported alias for charts/reports
 export const CATEGORIES = BASE_CATEGORIES;
 
-const REQUESTS_STORAGE_KEY = 'guestcare_requests_v2';
+const REQUESTS_STORAGE_KEY = 'guestcare_requests_v3';
 const FEEDBACK_STORAGE_KEY = 'guestcare_feedback_v2';
 const ACTIONS_STORAGE_KEY = 'guestcare_feedback_actions_v2';
 
@@ -175,7 +175,7 @@ const INITIAL_DEMO_REQUESTS: GuestRequest[] = [
     id: 'req-demo-101',
     ticketNumber: 'GC-20261117-0001',
     reservationRef: 'RES-89211',
-    apartmentRef: '402 - Penthouse Apartment 402',
+    apartmentRef: '1A - Apartment 1A',
     guestName: 'Sarah Jenkins',
     categoryId: 'cat-maint',
     title: 'Master bathroom hot water pressure low',
@@ -245,7 +245,7 @@ const INITIAL_DEMO_REQUESTS: GuestRequest[] = [
     id: 'req-demo-102',
     ticketNumber: 'GC-20261117-0002',
     reservationRef: 'RES-89212',
-    apartmentRef: '105 - Deluxe Studio 105',
+    apartmentRef: '1B - Apartment 1B',
     guestName: 'David Zhao',
     categoryId: 'cat-hk',
     title: 'Extra bath towels and pillows',
@@ -276,7 +276,7 @@ const INITIAL_DEMO_REQUESTS: GuestRequest[] = [
     id: 'req-demo-103',
     ticketNumber: 'GC-20261117-0003',
     reservationRef: 'RES-89213',
-    apartmentRef: '304 - Two Bedroom Residence 304',
+    apartmentRef: '2A - Apartment 2A',
     guestName: 'Elena Rostova',
     categoryId: 'cat-tech',
     title: 'Living room Smart TV won’t connect to Wi-Fi',

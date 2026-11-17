@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { tokenService } from '@/lib/tokenService';
 import { requestService } from '@/features/requests/requestService';
-import { portalConfigService, WifiConfig } from '@/features/config/portalConfigService';
+import { portalConfigService, WifiConfig, ContactAndBuildingConfig } from '@/features/config/portalConfigService';
 import { PortalSession, Category, GuestRequest, FAQItem, LocalServiceProvider } from '@/types/guestcare';
 import { ServiceGrid } from '../components/ServiceGrid';
 import { PopularServicesRow, PopularServiceItem } from '../components/PopularServicesRow';
@@ -41,6 +41,7 @@ export const GuestPortalPage: React.FC = () => {
   const [faqs, setFaqs] = useState<FAQItem[]>([]);
   const [providers, setProviders] = useState<LocalServiceProvider[]>([]);
   const [wifi, setWifi] = useState<WifiConfig>(portalConfigService.getWifi());
+  const [contact, setContact] = useState<ContactAndBuildingConfig>(portalConfigService.getContact());
 
   const [searchQuery, setSearchQuery] = useState('');
   const [showAllCategories, setShowAllCategories] = useState(true);
@@ -98,6 +99,7 @@ export const GuestPortalPage: React.FC = () => {
       setFaqs(portalConfigService.getFaqs(true));
       setProviders(portalConfigService.getProviders(true));
       setWifi(portalConfigService.getWifi());
+      setContact(portalConfigService.getContact());
     };
 
     loadData();
@@ -278,7 +280,7 @@ export const GuestPortalPage: React.FC = () => {
           {/* Direct Call Front Desk */}
           <div className="flex items-center gap-2">
             <a
-              href="tel:+15550192834"
+              href={`tel:${contact.frontDeskPhone.replace(/\s+/g, '')}`}
               className="inline-flex items-center gap-1.5 rounded-full bg-[#F0F7F5] px-3.5 py-2 text-xs font-semibold text-[#11574A] hover:bg-[#E2F0EC] transition-colors"
               title="Call Front Desk"
             >
@@ -494,10 +496,10 @@ export const GuestPortalPage: React.FC = () => {
                 24/7 Front Desk
               </span>
               <h3 className="text-sm font-bold text-slate-900">Need Immediate Help?</h3>
-              <p className="text-xs text-slate-500">Phone reception or chat on WhatsApp</p>
+              <p className="text-xs text-slate-500 font-mono">{contact.frontDeskPhone}</p>
             </div>
             <a
-              href="tel:+15550192834"
+              href={`tel:${contact.frontDeskPhone.replace(/\s+/g, '')}`}
               className="inline-flex items-center gap-1.5 rounded-xl bg-[#11574A] px-3.5 py-2 text-xs font-semibold text-white hover:bg-[#0D443A] transition-colors shrink-0"
             >
               <Phone className="h-3 w-3" />
@@ -543,7 +545,7 @@ export const GuestPortalPage: React.FC = () => {
         onNavigateRequests={() => navigate('/portal/requests')}
         onOpenFeedback={() => setFeedbackOpen(true)}
         onOpenContact={() => {
-          window.location.href = 'tel:+15550192834';
+          window.location.href = `tel:${contact.frontDeskPhone.replace(/\s+/g, '')}`;
         }}
       />
     </div>

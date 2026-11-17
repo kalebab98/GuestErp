@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { BUILDING_16_APARTMENTS, BUILDING_INFO, mockPMSAdapter } from '@/features/pms/mockAdapter';
+import { portalConfigService, ContactAndBuildingConfig } from '@/features/config/portalConfigService';
 import { tokenService } from '@/lib/tokenService';
 import { generateQRCodeDataUrl } from '@/lib/crypto';
 import { PMSApartment } from '@/types/pms';
 import { Button } from '@/components/ui/Button';
 import {
-  QrCode,
   Download,
   Copy,
   Check,
@@ -31,10 +31,17 @@ interface ApartmentQRState {
 
 export const ApartmentQRCodesPage: React.FC = () => {
   const [cards, setCards] = useState<ApartmentQRState[]>([]);
+  const [contact, setContact] = useState<ContactAndBuildingConfig>(portalConfigService.getContact());
   const [selectedFloor, setSelectedFloor] = useState<number | 'all'>('all');
   const [search, setSearch] = useState('');
   const [copiedUnit, setCopiedUnit] = useState<string | null>(null);
   const [initializing, setInitializing] = useState(true);
+
+  useEffect(() => {
+    return portalConfigService.subscribe(() => {
+      setContact(portalConfigService.getContact());
+    });
+  }, []);
 
   const buildQRForApartment = useCallback(async (apt: PMSApartment): Promise<ApartmentQRState> => {
     const res = await mockPMSAdapter.getReservationByApartmentUnit(apt.unitNumber);
@@ -54,18 +61,17 @@ export const ApartmentQRCodesPage: React.FC = () => {
           loading: false,
         };
       } catch {
-        // Fallback to unit URL if token creation fails
+        // Fallback below
       }
     }
 
-    // For vacant / upcoming units, render a standby QR code pointing to room landing
     const fallbackUrl = `${baseUrl}/portal?unit=${apt.unitNumber}`;
     const qrDataUrl = await generateQRCodeDataUrl(fallbackUrl);
     return {
       apartment: apt,
       reservationId: res?.id || `UNIT-${apt.unitNumber}`,
       guestLabel: res?.stayStatus === 'booked' ? `Arriving: ${res.primaryGuest.fullName}` : 'Ready for Check-in',
-      stayStatus: res?.stayStatus === 'booked' ? 'Upcoming' : 'Vacant / Standby',
+      stayStatus: res?.stayStatus === 'booked' ? 'Upcoming' : 'Vacant',
       portalUrl: fallbackUrl,
       qrDataUrl,
       loading: false,
@@ -124,7 +130,7 @@ export const ApartmentQRCodesPage: React.FC = () => {
     if (search.trim()) {
       const q = search.toLowerCase().trim();
       return (
-        c.apartment.unitNumber.includes(q) ||
+        c.apartment.unitNumber.toLowerCase().includes(q) ||
         c.apartment.name.toLowerCase().includes(q) ||
         c.guestLabel.toLowerCase().includes(q)
       );
@@ -154,13 +160,13 @@ export const ApartmentQRCodesPage: React.FC = () => {
           <div className="space-y-1.5">
             <span className="inline-flex items-center gap-1.5 text-[10px] font-mono font-semibold uppercase tracking-widest text-teal-200">
               <Building2 className="h-3.5 w-3.5" />
-              <span>16 Apartments • Floors 1–4 + Ground Floor Medical Store</span>
+              <span>16 Apartments (1A – 8B) • Ground Floor Medical Store</span>
             </span>
             <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-white">
               Apartment QR Codes
             </h1>
             <p className="text-xs sm:text-sm text-teal-100/90 max-w-xl font-light">
-              Each apartment has its own secure QR pass. Download, print for room frames, copy direct link, or rotate tokens on check-in.
+              Every apartment from 1A to 8B has its own secure QR pass. Download PNGs, copy guest links, print for room frames, or reset tokens on new check-ins.
             </p>
           </div>
 
@@ -175,7 +181,7 @@ export const ApartmentQRCodesPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Ground Floor Building Info Strip: Medical Store */}
+      {/* Ground Floor Building Info Strip (Live Editable in Settings) */}
       <div className="rounded-2xl bg-white border border-slate-200/70 p-4 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-start sm:items-center gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-50 text-rose-600 border border-rose-100">
@@ -186,59 +192,62 @@ export const ApartmentQRCodesPage: React.FC = () => {
               <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase text-slate-600">
                 Ground Floor
               </span>
-              <h2 className="text-sm font-bold text-slate-900">{BUILDING_INFO.groundFloor.name}</h2>
+              <h2 className="text-sm font-bold text-slate-900">{contact.medicalStoreName}</h2>
             </div>
-            <p className="text-xs text-slate-500 mt-0.5">{BUILDING_INFO.groundFloor.description}</p>
+            <p className="text-xs text-slate-500 mt-0.5">{contact.medicalStoreDescription}</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3 text-xs text-slate-600 shrink-0">
+        <div className="flex flex-wrap items-center gap-3 text-xs text-slate-600 shrink-0">
           <span className="inline-flex items-center gap-1 font-medium">
             <Clock className="h-3.5 w-3.5 text-[#11574A]" />
-            {BUILDING_INFO.groundFloor.hours}
+            {contact.medicalStoreHours}
           </span>
-          <span className="inline-flex items-center gap-1 font-mono font-semibold text-[#11574A]">
+          <a
+            href={`tel:${contact.medicalStorePhone.replace(/\s+/g, '')}`}
+            className="inline-flex items-center gap-1 font-mono font-semibold text-[#11574A] hover:underline"
+          >
             <Phone className="h-3.5 w-3.5" />
-            {BUILDING_INFO.groundFloor.phone}
-          </span>
+            {contact.medicalStorePhone}
+          </a>
         </div>
       </div>
 
-      {/* Floor Filter Pills + Search */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 print:hidden">
+      {/* Floor Filter Pills (1A-8B) + Search */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 print:hidden">
         <div className="flex flex-wrap items-center gap-1.5">
           <button
             type="button"
             onClick={() => setSelectedFloor('all')}
-            className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all border ${
+            className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-all border ${
               selectedFloor === 'all'
                 ? 'bg-[#11574A] text-white border-[#11574A]'
                 : 'bg-white text-slate-600 border-slate-200 hover:border-[#11574A]/40'
             }`}
           >
-            All Apartments (16)
+            All (16)
           </button>
           {BUILDING_INFO.floors.map(floor => (
             <button
               key={floor}
               type="button"
               onClick={() => setSelectedFloor(floor)}
-              className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all border ${
+              className={`rounded-full px-3 py-1.5 text-xs font-semibold transition-all border ${
                 selectedFloor === floor
                   ? 'bg-[#11574A] text-white border-[#11574A]'
                   : 'bg-white text-slate-600 border-slate-200 hover:border-[#11574A]/40'
               }`}
             >
-              Floor {floor} ({floor}01–{floor}04)
+              {floor}A–{floor}B
             </button>
           ))}
         </div>
 
-        <div className="relative w-full md:w-64">
+        <div className="relative w-full lg:w-60">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
           <input
             type="text"
-            placeholder="Search apartment #..."
+            placeholder="Search apt (e.g. 3A, 6B)..."
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="w-full rounded-xl bg-white pl-9 pr-3 py-2 text-xs text-slate-900 border border-slate-200 focus:border-[#11574A] focus:outline-none"
@@ -272,7 +281,7 @@ export const ApartmentQRCodesPage: React.FC = () => {
                         Apt {card.apartment.unitNumber}
                       </span>
                       <span className="rounded-md bg-[#F0F7F5] px-1.5 py-0.5 text-[10px] font-bold text-[#11574A]">
-                        F{card.apartment.floor}
+                        Floor {card.apartment.floor}
                       </span>
                     </div>
                     <p className="text-[11px] text-slate-500 mt-0.5">

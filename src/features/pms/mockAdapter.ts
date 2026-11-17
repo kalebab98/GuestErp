@@ -1,75 +1,52 @@
 // Mock PMS Adapter Implementation
-// Represents our 16-Apartment Building (Floors 1-4, 4 units per floor) + Ground Floor Medical Store
+// 16-Apartment Building: 1A, 1B, 2A, 2B, 3A, 3B, 4A, 4B, 5A, 5B, 6A, 6B, 7A, 7B, 8A, 8B + Ground Floor Medical Store
 
 import { IPMSAdapter, PMSApartment, PMSReservation, PMSEligibilityResult } from '@/types/pms';
 
 export const BUILDING_INFO = {
   totalApartments: 16,
-  floors: [1, 2, 3, 4],
-  groundFloor: {
-    name: 'Ground Floor Medical Store & Pharmacy',
-    description: 'Located on the ground floor of this building for over-the-counter medicines, prescriptions, first-aid, and health essentials.',
-    hours: '8:00 AM – 10:00 PM Daily',
-    phone: '+251 911 550 100',
-  },
+  floors: [1, 2, 3, 4, 5, 6, 7, 8],
 };
 
-export const BUILDING_16_APARTMENTS: PMSApartment[] = [
-  // Floor 1 (4 units)
-  { id: 'apt-101', unitNumber: '101', name: 'Apartment 101', building: 'Main Residence', floor: 1, type: 'studio', features: ['Balcony', 'Kitchenette', 'High-Speed Wi-Fi'] },
-  { id: 'apt-102', unitNumber: '102', name: 'Apartment 102', building: 'Main Residence', floor: 1, type: 'one_bedroom', features: ['Full Kitchen', 'Living Area', 'High-Speed Wi-Fi'] },
-  { id: 'apt-103', unitNumber: '103', name: 'Apartment 103', building: 'Main Residence', floor: 1, type: 'one_bedroom', features: ['Full Kitchen', 'Work Desk', 'Balcony'] },
-  { id: 'apt-104', unitNumber: '104', name: 'Apartment 104', building: 'Main Residence', floor: 1, type: 'two_bedroom', features: ['Full Kitchen', '2 Bathrooms', 'Family Living Area'] },
-
-  // Floor 2 (4 units)
-  { id: 'apt-201', unitNumber: '201', name: 'Apartment 201', building: 'Main Residence', floor: 2, type: 'studio', features: ['City View', 'Kitchenette', 'Work Desk'] },
-  { id: 'apt-202', unitNumber: '202', name: 'Apartment 202', building: 'Main Residence', floor: 2, type: 'one_bedroom', features: ['Full Kitchen', 'Balcony', 'Washer'] },
-  { id: 'apt-203', unitNumber: '203', name: 'Apartment 203', building: 'Main Residence', floor: 2, type: 'one_bedroom', features: ['Full Kitchen', 'City View', 'Work Desk'] },
-  { id: 'apt-204', unitNumber: '204', name: 'Apartment 204', building: 'Main Residence', floor: 2, type: 'two_bedroom', features: ['Full Kitchen', 'Balcony', 'Washer'] },
-
-  // Floor 3 (4 units)
-  { id: 'apt-301', unitNumber: '301', name: 'Apartment 301', building: 'Main Residence', floor: 3, type: 'studio', features: ['High Floor', 'Kitchenette', 'Balcony'] },
-  { id: 'apt-302', unitNumber: '302', name: 'Apartment 302', building: 'Main Residence', floor: 3, type: 'one_bedroom', features: ['Full Kitchen', 'City View', 'Smart TV'] },
-  { id: 'apt-303', unitNumber: '303', name: 'Apartment 303', building: 'Main Residence', floor: 3, type: 'one_bedroom', features: ['Full Kitchen', 'Balcony', 'Smart TV'] },
-  { id: 'apt-304', unitNumber: '304', name: 'Apartment 304', building: 'Main Residence', floor: 3, type: 'two_bedroom', features: ['Full Kitchen', '2 Bathrooms', 'Balcony'] },
-
-  // Floor 4 (4 units)
-  { id: 'apt-401', unitNumber: '401', name: 'Apartment 401', building: 'Main Residence', floor: 4, type: 'one_bedroom', features: ['Top Floor View', 'Full Kitchen', 'Balcony'] },
-  { id: 'apt-402', unitNumber: '402', name: 'Apartment 402', building: 'Main Residence', floor: 4, type: 'penthouse', features: ['Panoramic View', 'Full Kitchen', 'Terrace'] },
-  { id: 'apt-403', unitNumber: '403', name: 'Apartment 403', building: 'Main Residence', floor: 4, type: 'two_bedroom', features: ['Top Floor View', 'Full Kitchen', '2 Bathrooms'] },
-  { id: 'apt-404', unitNumber: '404', name: 'Apartment 404', building: 'Main Residence', floor: 4, type: 'penthouse', features: ['Panoramic View', 'Chef Kitchen', 'Private Terrace'] },
-];
+export const BUILDING_16_APARTMENTS: PMSApartment[] = [1, 2, 3, 4, 5, 6, 7, 8].flatMap(floor => [
+  {
+    id: `apt-${floor}a`,
+    unitNumber: `${floor}A`,
+    name: `Apartment ${floor}A`,
+    building: 'Main Residence',
+    floor,
+    type: floor === 8 ? 'penthouse' : floor % 2 === 0 ? 'two_bedroom' : 'one_bedroom',
+    features: ['Balcony', 'Full Kitchen', 'High-Speed Wi-Fi'],
+  },
+  {
+    id: `apt-${floor}b`,
+    unitNumber: `${floor}B`,
+    name: `Apartment ${floor}B`,
+    building: 'Main Residence',
+    floor,
+    type: floor === 8 ? 'penthouse' : floor % 2 === 0 ? 'one_bedroom' : 'two_bedroom',
+    features: ['City View', 'Full Kitchen', 'High-Speed Wi-Fi'],
+  },
+]);
 
 export class MockPMSAdapter implements IPMSAdapter {
-  readonly adapterName = 'MockPMSAdapter (16-Apartment Residence)';
+  readonly adapterName = 'MockPMSAdapter (16 Apartments: 1A–8B)';
   readonly isMock = true;
 
-  private apartments: PMSApartment[] = [
-    ...BUILDING_16_APARTMENTS,
-    // Legacy test apartment reference kept for backward-compatibility
-    {
-      id: 'apt-105',
-      unitNumber: '105',
-      name: 'Deluxe Studio 105',
-      building: 'Main Residence',
-      floor: 1,
-      type: 'studio',
-      features: ['Balcony', 'Kitchenette'],
-    },
-  ];
+  private apartments: PMSApartment[] = [...BUILDING_16_APARTMENTS];
 
   private reservations: PMSReservation[] = [
     {
       id: 'RES-89211',
-      apartmentId: 'apt-402',
-      apartment: BUILDING_16_APARTMENTS.find(a => a.unitNumber === '402')!,
+      apartmentId: 'apt-1a',
+      apartment: BUILDING_16_APARTMENTS.find(a => a.unitNumber === '1A')!,
       primaryGuest: {
         id: 'gst-1001',
         firstName: 'Sarah',
         lastName: 'Jenkins',
         fullName: 'Sarah Jenkins',
         email: 'sarah.jenkins@example.com',
-        phone: '+1 (555) 234-5678',
+        phone: '+251 911 234 567',
         vipStatus: true,
       },
       checkInDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
@@ -82,15 +59,15 @@ export class MockPMSAdapter implements IPMSAdapter {
     },
     {
       id: 'RES-89212',
-      apartmentId: 'apt-101',
-      apartment: BUILDING_16_APARTMENTS.find(a => a.unitNumber === '101')!,
+      apartmentId: 'apt-1b',
+      apartment: BUILDING_16_APARTMENTS.find(a => a.unitNumber === '1B')!,
       primaryGuest: {
         id: 'gst-1002',
         firstName: 'David',
         lastName: 'Zhao',
         fullName: 'David Zhao',
         email: 'david.zhao@example.com',
-        phone: '+1 (555) 345-6789',
+        phone: '+251 911 345 678',
       },
       checkInDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
       checkOutDate: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toISOString(),
@@ -102,8 +79,8 @@ export class MockPMSAdapter implements IPMSAdapter {
     },
     {
       id: 'RES-89213',
-      apartmentId: 'apt-304',
-      apartment: BUILDING_16_APARTMENTS.find(a => a.unitNumber === '304')!,
+      apartmentId: 'apt-2a',
+      apartment: BUILDING_16_APARTMENTS.find(a => a.unitNumber === '2A')!,
       primaryGuest: {
         id: 'gst-1003',
         firstName: 'Elena',
@@ -123,15 +100,15 @@ export class MockPMSAdapter implements IPMSAdapter {
     },
     {
       id: 'RES-89214',
-      apartmentId: 'apt-204',
-      apartment: BUILDING_16_APARTMENTS.find(a => a.unitNumber === '204')!,
+      apartmentId: 'apt-2b',
+      apartment: BUILDING_16_APARTMENTS.find(a => a.unitNumber === '2B')!,
       primaryGuest: {
         id: 'gst-1004',
         firstName: 'Michael',
         lastName: 'Brown',
         fullName: 'Michael Brown',
         email: 'michael.brown@example.com',
-        phone: '+1 (555) 789-0123',
+        phone: '+251 911 789 012',
       },
       checkInDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
       checkOutDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
@@ -143,15 +120,15 @@ export class MockPMSAdapter implements IPMSAdapter {
     },
     {
       id: 'RES-89215',
-      apartmentId: 'apt-404',
-      apartment: BUILDING_16_APARTMENTS.find(a => a.unitNumber === '404')!,
+      apartmentId: 'apt-8b',
+      apartment: BUILDING_16_APARTMENTS.find(a => a.unitNumber === '8B')!,
       primaryGuest: {
         id: 'gst-1005',
         firstName: 'Lucas',
         lastName: 'Miller',
         fullName: 'Lucas Miller',
         email: 'lucas.miller@example.com',
-        phone: '+1 (555) 890-1234',
+        phone: '+251 911 890 123',
       },
       checkInDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
       checkOutDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
@@ -161,9 +138,9 @@ export class MockPMSAdapter implements IPMSAdapter {
       createdAt: '2026-11-12T16:00:00Z',
       updatedAt: '2026-11-12T16:00:00Z',
     },
-    // Active reservations for remaining apartments so staff can issue & test QR codes for any of the 16 units
+    // Active reservations for all remaining apartments (3A through 8A)
     ...BUILDING_16_APARTMENTS.filter(
-      a => !['402', '101', '304', '204', '404'].includes(a.unitNumber)
+      a => !['1A', '1B', '2A', '2B', '8B'].includes(a.unitNumber)
     ).map((apt, index) => ({
       id: `RES-APT-${apt.unitNumber}`,
       apartmentId: apt.id,
@@ -173,7 +150,7 @@ export class MockPMSAdapter implements IPMSAdapter {
         firstName: 'Guest',
         lastName: `Apt ${apt.unitNumber}`,
         fullName: `Apartment ${apt.unitNumber} Guest`,
-        email: `apt${apt.unitNumber}@guest.residence`,
+        email: `apt${apt.unitNumber.toLowerCase()}@guest.residence`,
         phone: `+251 911 000 ${String(100 + index).slice(-3)}`,
       },
       checkInDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
@@ -197,10 +174,12 @@ export class MockPMSAdapter implements IPMSAdapter {
 
   async getReservationByApartmentUnit(unitNumber: string): Promise<PMSReservation | null> {
     const res = this.reservations.find(
-      r => r.apartment.unitNumber === unitNumber && r.stayStatus === 'checked_in'
+      r => r.apartment.unitNumber.toLowerCase() === unitNumber.toLowerCase() && r.stayStatus === 'checked_in'
     );
     if (res) return JSON.parse(JSON.stringify(res));
-    const anyRes = this.reservations.find(r => r.apartment.unitNumber === unitNumber);
+    const anyRes = this.reservations.find(
+      r => r.apartment.unitNumber.toLowerCase() === unitNumber.toLowerCase()
+    );
     return anyRes ? JSON.parse(JSON.stringify(anyRes)) : null;
   }
 
@@ -268,7 +247,7 @@ export class MockPMSAdapter implements IPMSAdapter {
       r =>
         r.id.toLowerCase().includes(q) ||
         r.primaryGuest.fullName.toLowerCase().includes(q) ||
-        r.apartment.unitNumber.includes(q) ||
+        r.apartment.unitNumber.toLowerCase().includes(q) ||
         r.apartment.name.toLowerCase().includes(q)
     );
   }

@@ -8,7 +8,15 @@ describe('PMS Integration Adapter', () => {
     expect(res).not.toBeNull();
     expect(res?.id).toBe('RES-89211');
     expect(res?.primaryGuest.fullName).toBe('Sarah Jenkins');
-    expect(res?.apartment.unitNumber).toBe('402');
+    expect(res?.apartment.unitNumber).toBe('1A');
+  });
+
+  it('lists all 16 building apartments named 1A through 8B', () => {
+    const apartments = mockPMSAdapter.listAllBuildingApartments();
+    expect(apartments).toHaveLength(16);
+    expect(apartments[0].unitNumber).toBe('1A');
+    expect(apartments[1].unitNumber).toBe('1B');
+    expect(apartments[15].unitNumber).toBe('8B');
   });
 
   it('verifies stay eligibility for actively checked-in guests', async () => {
@@ -19,14 +27,14 @@ describe('PMS Integration Adapter', () => {
   });
 
   it('rejects stay eligibility when guest has completed checkout', async () => {
-    const eligibility = await mockPMSAdapter.verifyStayEligibility('RES-89214'); // Michael Brown, checked out
+    const eligibility = await mockPMSAdapter.verifyStayEligibility('RES-89214');
 
     expect(eligibility.isEligible).toBe(false);
     expect(eligibility.reason).toContain('already completed checkout');
   });
 
   it('rejects stay eligibility when arrival date is in the future', async () => {
-    const eligibility = await mockPMSAdapter.verifyStayEligibility('RES-89215'); // Lucas Miller, arrives in 2 days
+    const eligibility = await mockPMSAdapter.verifyStayEligibility('RES-89215');
 
     expect(eligibility.isEligible).toBe(false);
     expect(eligibility.reason).toContain('Portal access opens on check-in day');
@@ -37,9 +45,8 @@ describe('PMS Integration Adapter', () => {
     expect(byName.length).toBeGreaterThanOrEqual(1);
     expect(byName[0].primaryGuest.fullName).toContain('David');
 
-    const byUnit = await mockPMSAdapter.searchReservations('402');
+    const byUnit = await mockPMSAdapter.searchReservations('1A');
     expect(byUnit.length).toBeGreaterThanOrEqual(1);
-    expect(byUnit[0].apartment.unitNumber).toBe('402');
+    expect(byUnit[0].apartment.unitNumber).toBe('1A');
   });
 });
-

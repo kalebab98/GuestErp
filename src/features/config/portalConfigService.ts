@@ -1,6 +1,7 @@
-// Portal Content & Catalog Configuration Service
-// All FAQs, Deliverable Items, Common Presets, Wi-Fi Info, and Local Directory Numbers
-// are dynamically editable from the Staff Dashboard and reflect live in the Guest Portal.
+// Portal Content, Contact Numbers & Catalog Configuration Service
+// Everything shown on the Guest Portal & Building Directory (Wi-Fi, Phone Numbers,
+// Medical Store Info, FAQs, Deliverable Items, Presets, and Local Directory)
+// is 100% editable from the Staff Command Center.
 
 import { CategoryCode, FAQItem, LocalServiceProvider, PresetServiceItem } from '@/types/guestcare';
 
@@ -10,6 +11,7 @@ const STORAGE_KEYS = {
   PRESETS: 'guestcare_config_presets_v3',
   PROVIDERS: 'guestcare_config_providers_v5',
   WIFI: 'guestcare_config_wifi_v3',
+  CONTACT: 'guestcare_config_contact_v1',
 };
 
 export interface CategoryPreset {
@@ -24,9 +26,39 @@ export interface WifiConfig {
   password: string;
 }
 
+export interface ContactAndBuildingConfig {
+  propertyName: string;
+  frontDeskPhone: string;
+  frontDeskWhatsapp: string;
+  medicalStoreName: string;
+  medicalStorePhone: string;
+  medicalStoreHours: string;
+  medicalStoreDescription: string;
+  slaUrgentMinutes: number;
+  slaHighMinutes: number;
+  slaMediumMinutes: number;
+  slaLowMinutes: number;
+  tokenGracePeriodHours: number;
+}
+
 const DEFAULT_WIFI: WifiConfig = {
   networkName: 'GrandMarina-5G',
   password: 'residenceguest',
+};
+
+const DEFAULT_CONTACT: ContactAndBuildingConfig = {
+  propertyName: 'GuestCare Residences',
+  frontDeskPhone: '+251 911 000 000',
+  frontDeskWhatsapp: '+251911000000',
+  medicalStoreName: 'Ground Floor Medical Store',
+  medicalStorePhone: '+251 911 550 100',
+  medicalStoreHours: '8:00 AM – 10:00 PM Daily',
+  medicalStoreDescription: 'Located on the ground floor of this building for medicines, prescriptions, first-aid, and health essentials.',
+  slaUrgentMinutes: 15,
+  slaHighMinutes: 45,
+  slaMediumMinutes: 120,
+  slaLowMinutes: 240,
+  tokenGracePeriodHours: 2,
 };
 
 const DEFAULT_FAQS: FAQItem[] = [
@@ -51,13 +83,13 @@ const DEFAULT_FAQS: FAQItem[] = [
   {
     id: 'faq-4',
     question: 'How do I get a taxi or order food, coffee, or SIM cards?',
-    answer: 'Use the "Local Services & Quick Dial" card below to call RIDE (8294), Feres (6090), or local shops directly — or place a "Shop & Delivery" request for our Front Desk to bring it to your door.',
+    answer: 'Open the "Local Shops, Food & Ride Numbers" card to call RIDE (8294), Feres (6090), or local shops directly — or place a "Shop & Delivery" request for Front Desk delivery.',
     isActive: true,
   },
   {
     id: 'faq-5',
-    question: 'Where do I dispose of trash & recycling?',
-    answer: 'Trash chutes are located beside the service elevator on every floor, or request pickup anytime under Housekeeping.',
+    question: 'Where is the nearest pharmacy or medical store?',
+    answer: 'There is a Medical Store located directly on the Ground Floor of this building.',
     isActive: true,
   },
 ];
@@ -99,53 +131,44 @@ const DEFAULT_DELIVERABLE_ITEMS: PresetServiceItem[] = [
 ];
 
 const DEFAULT_PRESETS: CategoryPreset[] = [
-  // Maintenance (no AC)
   { id: 'pre-m1', categoryCode: 'maintenance', label: 'No hot water / low shower pressure', isActive: true },
   { id: 'pre-m2', categoryCode: 'maintenance', label: 'Sink or shower drain is slow', isActive: true },
   { id: 'pre-m3', categoryCode: 'maintenance', label: 'Light bulb out or power socket issue', isActive: true },
   { id: 'pre-m4', categoryCode: 'maintenance', label: 'Kitchen appliance issue (fridge / stove / kettle)', isActive: true },
   { id: 'pre-m5', categoryCode: 'maintenance', label: 'Door lock, window, or safe issue', isActive: true },
 
-  // Housekeeping
   { id: 'pre-h1', categoryCode: 'housekeeping', label: 'Full apartment cleaning & refresh', isActive: true },
   { id: 'pre-h2', categoryCode: 'housekeeping', label: 'Fresh towel replacement', isActive: true },
   { id: 'pre-h3', categoryCode: 'housekeeping', label: 'Change bed sheets & linens', isActive: true },
   { id: 'pre-h4', categoryCode: 'housekeeping', label: 'Trash & recycling pickup', isActive: true },
 
-  // Laundry
   { id: 'pre-l1', categoryCode: 'laundry', label: 'Pickup laundry bag for wash & fold', isActive: true },
   { id: 'pre-l2', categoryCode: 'laundry', label: 'Express ironing service', isActive: true },
   { id: 'pre-l3', categoryCode: 'laundry', label: 'Dry cleaning pickup', isActive: true },
   { id: 'pre-l4', categoryCode: 'laundry', label: 'Need clothes drying rack / hangers', isActive: true },
 
-  // Shop & Delivery
   { id: 'pre-s1', categoryCode: 'shop_delivery', label: 'Order fresh coffee or tea to apartment', isActive: true },
   { id: 'pre-s2', categoryCode: 'shop_delivery', label: 'Buy mobile recharge card / SIM card', isActive: true },
   { id: 'pre-s3', categoryCode: 'shop_delivery', label: 'Buy cigarettes / mini-market items', isActive: true },
   { id: 'pre-s4', categoryCode: 'shop_delivery', label: 'Order food / snacks delivery', isActive: true },
 
-  // Comfort
   { id: 'pre-c1', categoryCode: 'comfort', label: 'Request standing fan or extra blanket', isActive: true },
   { id: 'pre-c2', categoryCode: 'comfort', label: 'Need iron & ironing board', isActive: true },
   { id: 'pre-c3', categoryCode: 'comfort', label: 'Extra kitchenware or glasses', isActive: true },
 
-  // Wi-Fi & Tech
   { id: 'pre-t1', categoryCode: 'internet_tech', label: 'Wi-Fi not connecting or slow', isActive: true },
   { id: 'pre-t2', categoryCode: 'internet_tech', label: 'Smart TV / remote control issue', isActive: true },
   { id: 'pre-t3', categoryCode: 'internet_tech', label: 'Need power adapter or extension cord', isActive: true },
 
-  // Front Desk
   { id: 'pre-f1', categoryCode: 'guest_services', label: 'Request late check-out', isActive: true },
   { id: 'pre-f2', categoryCode: 'guest_services', label: 'Luggage assistance / bag storage', isActive: true },
   { id: 'pre-f3', categoryCode: 'guest_services', label: 'Extra apartment keycard', isActive: true },
   { id: 'pre-f4', categoryCode: 'guest_services', label: 'Airport taxi / ride booking', isActive: true },
 
-  // Other
   { id: 'pre-o1', categoryCode: 'other', label: 'Invoice or billing question', isActive: true },
   { id: 'pre-o2', categoryCode: 'other', label: 'General question for reception', isActive: true },
 ];
 
-// Unified Local Services & Quick Dial Directory (Ethiopia Ride + Shops + Coffee + Food)
 const DEFAULT_PROVIDERS: LocalServiceProvider[] = [
   {
     id: 'prov-ride',
@@ -241,6 +264,7 @@ class PortalConfigService {
   private presets: CategoryPreset[] = load(STORAGE_KEYS.PRESETS, DEFAULT_PRESETS);
   private providers: LocalServiceProvider[] = load(STORAGE_KEYS.PROVIDERS, DEFAULT_PROVIDERS);
   private wifi: WifiConfig = load(STORAGE_KEYS.WIFI, DEFAULT_WIFI);
+  private contact: ContactAndBuildingConfig = load(STORAGE_KEYS.CONTACT, DEFAULT_CONTACT);
   private listeners: Array<() => void> = [];
 
   subscribe(listener: () => void): () => void {
@@ -256,7 +280,18 @@ class PortalConfigService {
     save(STORAGE_KEYS.PRESETS, this.presets);
     save(STORAGE_KEYS.PROVIDERS, this.providers);
     save(STORAGE_KEYS.WIFI, this.wifi);
+    save(STORAGE_KEYS.CONTACT, this.contact);
     this.listeners.forEach(l => l());
+  }
+
+  // --- Contact, Phone Numbers & Building Info ---
+  getContact(): ContactAndBuildingConfig {
+    return { ...this.contact };
+  }
+
+  updateContact(patch: Partial<ContactAndBuildingConfig>): void {
+    this.contact = { ...this.contact, ...patch };
+    this.emit();
   }
 
   // --- Wi-Fi Info ---
@@ -390,6 +425,7 @@ class PortalConfigService {
     this.presets = [...DEFAULT_PRESETS];
     this.providers = [...DEFAULT_PROVIDERS];
     this.wifi = { ...DEFAULT_WIFI };
+    this.contact = { ...DEFAULT_CONTACT };
     this.emit();
   }
 }

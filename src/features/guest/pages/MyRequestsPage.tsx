@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { tokenService } from '@/lib/tokenService';
 import { requestService } from '@/features/requests/requestService';
+import { portalConfigService } from '@/features/config/portalConfigService';
 import { PortalSession, GuestRequest } from '@/types/guestcare';
 import { StatusBadge, PriorityBadge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -354,7 +355,8 @@ export const MyRequestsPage: React.FC = () => {
         onNavigateRequests={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         onOpenFeedback={() => {}}
         onOpenContact={() => {
-          window.location.href = 'tel:+15550192834';
+          const phone = portalConfigService.getContact().frontDeskPhone;
+          window.location.href = `tel:${phone.replace(/\s+/g, '')}`;
         }}
       />
     </div>
