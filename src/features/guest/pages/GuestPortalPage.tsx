@@ -275,29 +275,16 @@ export const GuestPortalPage: React.FC = () => {
             </button>
           </div>
 
-          {/* User Profile & Direct Call */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          {/* Direct Call Front Desk */}
+          <div className="flex items-center gap-2">
             <a
               href="tel:+15550192834"
-              className="inline-flex items-center gap-1.5 rounded-full bg-[#F0F7F5] px-3 py-1.5 text-xs font-semibold text-[#11574A] hover:bg-[#E2F0EC] transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-full bg-[#F0F7F5] px-3.5 py-2 text-xs font-semibold text-[#11574A] hover:bg-[#E2F0EC] transition-colors"
               title="Call Front Desk"
             >
               <Phone className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Front Desk</span>
+              <span>Front Desk</span>
             </a>
-
-            <div className="flex items-center gap-2 pl-1.5 border-l border-slate-200">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#11574A] text-white font-bold text-xs">
-                {session.guestName
-                  .split(' ')
-                  .map(n => n[0])
-                  .join('')
-                  .slice(0, 2)}
-              </div>
-              <span className="hidden sm:inline-block text-xs font-semibold text-slate-800">
-                {session.guestName.split(' ')[0]}
-              </span>
-            </div>
           </div>
         </div>
       </header>

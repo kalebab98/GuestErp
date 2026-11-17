@@ -8,7 +8,7 @@ const STORAGE_KEYS = {
   FAQS: 'guestcare_config_faqs_v3',
   ITEMS: 'guestcare_config_items_v3',
   PRESETS: 'guestcare_config_presets_v3',
-  PROVIDERS: 'guestcare_config_providers_v3',
+  PROVIDERS: 'guestcare_config_providers_v4',
   WIFI: 'guestcare_config_wifi_v3',
 };
 
@@ -150,7 +150,7 @@ const DEFAULT_PROVIDERS: LocalServiceProvider[] = [
   {
     id: 'prov-ride',
     name: 'RIDE Taxi (Ethiopia)',
-    category: 'Ride & Airport Taxi',
+    category: 'Ride & Taxi',
     description: '24/7 metered taxi & airport pickup anywhere in Addis Ababa.',
     itemsOffered: ['City Ride', 'Airport Transfer'],
     phone: '8294',
@@ -160,7 +160,7 @@ const DEFAULT_PROVIDERS: LocalServiceProvider[] = [
   {
     id: 'prov-feres',
     name: 'Feres Ride (Ethiopia)',
-    category: 'Ride & City Taxi',
+    category: 'Ride & Taxi',
     description: 'Fast on-demand city car dispatch across Addis Ababa.',
     itemsOffered: ['City Ride', 'Airport Pickup'],
     phone: '6090',
@@ -170,8 +170,8 @@ const DEFAULT_PROVIDERS: LocalServiceProvider[] = [
   {
     id: 'prov-market',
     name: 'Nearby Mini Market & Shop',
-    category: 'Cards, Cigarettes, Water & Snacks',
-    description: 'Ethio Telecom / Safaricom recharge cards, cigarettes, bottled water & daily items.',
+    category: 'Mini Market & Shop',
+    description: 'Ethio Telecom / Safaricom cards, cigarettes, bottled water & snacks.',
     itemsOffered: ['Mobile Cards', 'Cigarettes', 'Water', 'Snacks'],
     phone: '+251 911 234 567',
     whatsapp: '+251911234567',
@@ -181,8 +181,8 @@ const DEFAULT_PROVIDERS: LocalServiceProvider[] = [
   {
     id: 'prov-coffee',
     name: 'Local Coffee & Tea Bar',
-    category: 'Coffee, Tea & Breakfast',
-    description: 'Fresh Ethiopian coffee, macchiato, spiced tea, and warm pastries delivered to your door.',
+    category: 'Coffee & Tea',
+    description: 'Fresh Ethiopian coffee, macchiato, spiced tea & warm pastries.',
     itemsOffered: ['Ethiopian Coffee', 'Macchiato', 'Tea', 'Pastries'],
     phone: '+251 911 345 678',
     whatsapp: '+251911345678',
@@ -192,8 +192,8 @@ const DEFAULT_PROVIDERS: LocalServiceProvider[] = [
   {
     id: 'prov-food',
     name: 'Local Food & Meal Delivery',
-    category: 'Food & Restaurant Service',
-    description: 'Hot traditional Ethiopian & international meals delivered directly to the apartment.',
+    category: 'Food & Meals',
+    description: 'Hot traditional Ethiopian & international meals delivered to your door.',
     itemsOffered: ['Lunch & Dinner', 'Traditional Dishes', 'Grills & Salads'],
     phone: '+251 911 456 789',
     whatsapp: '+251911456789',

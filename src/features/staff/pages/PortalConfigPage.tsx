@@ -61,11 +61,20 @@ export const PortalConfigPage: React.FC = () => {
 
   // Form state for Local Service Providers
   const [newProvName, setNewProvName] = useState('');
-  const [newProvCat, setNewProvCat] = useState('');
+  const [newProvCat, setNewProvCat] = useState('Mini Market & Shop');
   const [newProvPhone, setNewProvPhone] = useState('');
   const [newProvWhatsapp, setNewProvWhatsapp] = useState('');
   const [newProvHours, setNewProvHours] = useState('8:00 AM – 10:00 PM');
   const [newProvDesc, setNewProvDesc] = useState('');
+  const [editingProvId, setEditingProvId] = useState<string | null>(null);
+  const [editProvForm, setEditProvForm] = useState({
+    name: '',
+    category: '',
+    phone: '',
+    whatsapp: '',
+    hours: '',
+    description: '',
+  });
 
   // Form state for Presets
   const [presetCat, setPresetCat] = useState<CategoryCode>('maintenance');
@@ -135,10 +144,35 @@ export const PortalConfigPage: React.FC = () => {
       isActive: true,
     });
     setNewProvName('');
-    setNewProvCat('');
+    setNewProvCat('Mini Market & Shop');
     setNewProvPhone('');
     setNewProvWhatsapp('');
     setNewProvDesc('');
+  };
+
+  const startEditProvider = (p: LocalServiceProvider) => {
+    setEditingProvId(p.id);
+    setEditProvForm({
+      name: p.name,
+      category: p.category,
+      phone: p.phone,
+      whatsapp: p.whatsapp || '',
+      hours: p.hours,
+      description: p.description,
+    });
+  };
+
+  const saveEditProvider = () => {
+    if (!editingProvId || !editProvForm.name.trim() || !editProvForm.phone.trim()) return;
+    portalConfigService.updateProvider(editingProvId, {
+      name: editProvForm.name.trim(),
+      category: editProvForm.category.trim() || 'Local Delivery',
+      phone: editProvForm.phone.trim(),
+      whatsapp: editProvForm.whatsapp.trim() || undefined,
+      hours: editProvForm.hours.trim() || 'Open Daily',
+      description: editProvForm.description.trim(),
+    });
+    setEditingProvId(null);
   };
 
   // Handlers: Presets
@@ -501,36 +535,99 @@ export const PortalConfigPage: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {providers.map(p => (
               <Card key={p.id} className="p-4 bg-white space-y-2">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <h3 className={`text-sm font-bold ${!p.isActive ? 'line-through text-slate-400' : 'text-slate-900'}`}>
-                      {p.name}
-                    </h3>
-                    <p className="text-xs font-medium text-teal-700">{p.category} • {p.hours}</p>
+                {editingProvId === p.id ? (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      <Input
+                        label="Name"
+                        value={editProvForm.name}
+                        onChange={e => setEditProvForm({ ...editProvForm, name: e.target.value })}
+                      />
+                      <Input
+                        label="Category"
+                        value={editProvForm.category}
+                        onChange={e => setEditProvForm({ ...editProvForm, category: e.target.value })}
+                      />
+                      <Input
+                        label="Dial / Phone Number"
+                        value={editProvForm.phone}
+                        onChange={e => setEditProvForm({ ...editProvForm, phone: e.target.value })}
+                      />
+                      <Input
+                        label="WhatsApp (optional)"
+                        value={editProvForm.whatsapp}
+                        onChange={e => setEditProvForm({ ...editProvForm, whatsapp: e.target.value })}
+                      />
+                      <Input
+                        label="Opening Hours"
+                        value={editProvForm.hours}
+                        onChange={e => setEditProvForm({ ...editProvForm, hours: e.target.value })}
+                      />
+                      <Input
+                        label="Description"
+                        value={editProvForm.description}
+                        onChange={e => setEditProvForm({ ...editProvForm, description: e.target.value })}
+                      />
+                    </div>
+                    <div className="flex items-center gap-2 pt-1">
+                      <Button size="sm" onClick={saveEditProvider} className="text-xs gap-1">
+                        <Check className="h-3.5 w-3.5" /> Save Changes
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setEditingProvId(null)}
+                        className="text-xs gap-1"
+                      >
+                        <X className="h-3.5 w-3.5" /> Cancel
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 px-2"
-                      onClick={() => portalConfigService.updateProvider(p.id, { isActive: !p.isActive })}
-                    >
-                      {p.isActive ? <Eye className="h-3.5 w-3.5 text-emerald-600" /> : <EyeOff className="h-3.5 w-3.5 text-slate-400" />}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 px-2 text-rose-600 hover:bg-rose-50"
-                      onClick={() => portalConfigService.deleteProvider(p.id)}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                </div>
-                <p className="text-xs text-slate-600">{p.description}</p>
-                <p className="text-[11px] text-slate-400 font-mono">
-                  Phone: {p.phone} {p.whatsapp ? `| WhatsApp: ${p.whatsapp}` : ''}
-                </p>
+                ) : (
+                  <>
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <h3 className={`text-sm font-bold ${!p.isActive ? 'line-through text-slate-400' : 'text-slate-900'}`}>
+                          {p.name}
+                        </h3>
+                        <p className="text-xs font-medium text-teal-700">{p.category} • {p.hours}</p>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 px-2"
+                          onClick={() => portalConfigService.updateProvider(p.id, { isActive: !p.isActive })}
+                          title={p.isActive ? 'Hide from Guest Portal' : 'Show on Guest Portal'}
+                        >
+                          {p.isActive ? <Eye className="h-3.5 w-3.5 text-emerald-600" /> : <EyeOff className="h-3.5 w-3.5 text-slate-400" />}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 px-2"
+                          onClick={() => startEditProvider(p)}
+                          title="Edit Provider"
+                        >
+                          <Edit2 className="h-3.5 w-3.5 text-slate-600" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 px-2 text-rose-600 hover:bg-rose-50"
+                          onClick={() => portalConfigService.deleteProvider(p.id)}
+                          title="Delete Provider"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                    <p className="text-xs text-slate-600">{p.description}</p>
+                    <p className="text-[11px] text-slate-500 font-mono">
+                      Dial: <strong>{p.phone}</strong> {p.whatsapp ? `| WhatsApp: ${p.whatsapp}` : ''}
+                    </p>
+                  </>
+                )}
               </Card>
             ))}
           </div>
