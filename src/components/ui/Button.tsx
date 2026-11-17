@@ -13,12 +13,12 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       'inline-flex items-center justify-center font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 select-none';
 
     const variants = {
-      primary: 'bg-teal-700 text-white hover:bg-teal-800 focus-visible:ring-teal-700 active:bg-teal-900 shadow-sm',
-      secondary: 'bg-slate-100 text-slate-800 hover:bg-slate-200 focus-visible:ring-slate-400',
-      outline: 'border border-slate-300 bg-transparent text-slate-700 hover:bg-slate-50 focus-visible:ring-slate-400',
+      primary: 'bg-[#11574A] text-white hover:bg-[#0D443A] focus-visible:ring-[#11574A] active:bg-[#09332B] shadow-2xs',
+      secondary: 'bg-[#F0F7F5] text-[#11574A] hover:bg-[#E2F0EC] focus-visible:ring-[#11574A]',
+      outline: 'border border-slate-200 bg-white text-slate-700 hover:bg-[#F6F8F8] hover:border-slate-300 focus-visible:ring-slate-400',
       ghost: 'bg-transparent text-slate-600 hover:bg-slate-100 focus-visible:ring-slate-400',
-      danger: 'bg-rose-600 text-white hover:bg-rose-700 focus-visible:ring-rose-600 shadow-sm',
-      success: 'bg-emerald-600 text-white hover:bg-emerald-700 focus-visible:ring-emerald-600 shadow-sm',
+      danger: 'bg-rose-600 text-white hover:bg-rose-700 focus-visible:ring-rose-600 shadow-2xs',
+      success: 'bg-emerald-600 text-white hover:bg-emerald-700 focus-visible:ring-emerald-600 shadow-2xs',
     };
 
     const sizes = {

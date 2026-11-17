@@ -265,10 +265,10 @@ export const PortalConfigPage: React.FC = () => {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition-all ${
+              className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold transition-all ${
                 active
-                  ? 'bg-teal-800 text-white shadow-xs'
-                  : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+                  ? 'bg-[#11574A] text-white shadow-2xs'
+                  : 'bg-white text-slate-600 border border-slate-200/80 hover:bg-[#F0F7F5] hover:text-[#11574A]'
               }`}
             >
               <Icon className="h-3.5 w-3.5" />

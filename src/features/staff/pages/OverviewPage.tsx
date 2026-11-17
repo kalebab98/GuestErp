@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { requestService } from '@/features/requests/requestService';
 import { GuestRequest, GuestHealthRecord, GuestFeedback } from '@/types/guestcare';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { StatusBadge, PriorityBadge, HealthStatusBadge } from '@/components/ui/Badge';
 import { RequestDetailDrawer } from '../components/RequestDetailDrawer';
@@ -11,18 +10,18 @@ import { StatusChangeModal } from '../components/StatusChangeModal';
 import {
   Inbox,
   AlertTriangle,
-  Clock,
   Activity,
   CheckCircle2,
-  TrendingUp,
   ArrowRight,
   ShieldAlert,
   Star,
   User,
   Wrench,
   Sparkles,
+  ChevronRight,
+  Sliders,
 } from 'lucide-react';
-import { formatTimeAgo, formatDate } from '@/lib/utils';
+import { formatTimeAgo } from '@/lib/utils';
 
 export const OverviewPage: React.FC = () => {
   const navigate = useNavigate();
@@ -42,287 +41,341 @@ export const OverviewPage: React.FC = () => {
 
   useEffect(() => {
     loadData();
-    const unsub = requestService.subscribe(loadData);
-    return () => unsub();
+    return requestService.subscribe(loadData);
   }, []);
 
-  // Compute metrics
+  // Metrics
   const activeRequests = requests.filter(r => !['closed', 'cancelled'].includes(r.status));
   const urgentCount = activeRequests.filter(r => r.priority === 'urgent' || r.status === 'reopened').length;
   const criticalHealthCount = healthRecords.filter(h => h.status === 'critical' || h.status === 'at_risk').length;
-  const resolvedCount = requests.filter(r => r.status === 'closed' || r.status === 'resolved').length;
   const confirmedSatisfied = requests.filter(r => r.guestSatisfaction === 'satisfied').length;
   const confirmedTotal = requests.filter(r => r.guestSatisfaction !== undefined).length;
   const satisfactionRate = confirmedTotal > 0 ? Math.round((confirmedSatisfied / confirmedTotal) * 100) : 100;
 
-  // Requests needing immediate action (urgent, reopened, or unacknowledged)
   const priorityActionQueue = requests
     .filter(r => r.status === 'reopened' || r.priority === 'urgent' || r.status === 'new')
     .slice(0, 5);
 
-  return (
-    <div className="space-y-6">
-      {/* Top Banner / KPIs */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight text-slate-900">Operations Overview</h1>
-          <p className="text-xs text-slate-500">Live operational status and in-stay guest experience metrics</p>
-        </div>
+  const deptQueues = [
+    {
+      label: 'Maintenance',
+      count: requests.filter(r => r.assignedDepartment === 'maintenance' && !['closed', 'cancelled'].includes(r.status)).length,
+      icon: Wrench,
+      path: '/staff/maintenance',
+    },
+    {
+      label: 'Housekeeping',
+      count: requests.filter(r => r.assignedDepartment === 'housekeeping' && !['closed', 'cancelled'].includes(r.status)).length,
+      icon: Sparkles,
+      path: '/staff/housekeeping',
+    },
+    {
+      label: 'Front Desk',
+      count: requests.filter(r => r.assignedDepartment === 'reception' && !['closed', 'cancelled'].includes(r.status)).length,
+      icon: User,
+      path: '/staff/requests?dept=reception',
+    },
+    {
+      label: 'Management',
+      count: requests.filter(r => r.assignedDepartment === 'management' && !['closed', 'cancelled'].includes(r.status)).length,
+      icon: ShieldAlert,
+      path: '/staff/requests?dept=management',
+    },
+  ];
 
-        <div className="flex items-center gap-2">
-          <Button size="sm" variant="outline" onClick={() => navigate('/staff/requests')}>
-            <span>View All Tickets ({requests.length})</span>
-            <ArrowRight className="h-3.5 w-3.5 ml-1" />
-          </Button>
+  return (
+    <div className="space-y-6 sm:space-y-7 text-left">
+      {/* Signature Deep Forest Teal Hero Banner (aligned with Guest Center) */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0F4F43] via-[#11574A] to-[#156758] p-5 sm:p-7 text-white shadow-lg">
+        <div className="absolute -top-12 -right-12 h-44 w-44 rounded-full bg-white/5 pointer-events-none" />
+        <div className="absolute -bottom-16 -left-16 h-48 w-48 rounded-full bg-black/10 pointer-events-none" />
+
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+          <div className="space-y-2 max-w-xl">
+            <span className="inline-block text-[10px] sm:text-xs font-mono font-semibold uppercase tracking-widest text-teal-200">
+              Staff Command Center
+            </span>
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight text-white leading-tight">
+              OPERATIONS OVERVIEW
+            </h1>
+            <p className="text-xs sm:text-sm text-teal-100/90 leading-relaxed font-light">
+              Monitor live guest requests, assign department staff, track guest health scores, and manage Guest Portal items & FAQs in real time.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+            <Button
+              onClick={() => navigate('/staff/requests')}
+              className="bg-white text-[#11574A] hover:bg-teal-50 font-bold text-xs rounded-xl px-4 py-2.5 shadow-sm gap-1.5"
+            >
+              <span>All Tickets ({requests.length})</span>
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Button>
+
+            <button
+              type="button"
+              onClick={() => navigate('/staff/portal-config')}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 px-4 py-2.5 text-xs font-semibold text-white transition-colors"
+            >
+              <Sliders className="h-3.5 w-3.5 text-teal-200" />
+              <span>Edit Portal & FAQs</span>
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* KPI Cards Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="border-l-4 border-l-teal-600">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-500">Active Requests</span>
-              <Inbox className="h-4 w-4 text-teal-600" />
+      {/* Clean KPI Grid (Soft rounded cards matching Guest Center) */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="rounded-2xl bg-white border border-slate-200/70 p-4 sm:p-5 shadow-2xs space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-slate-500">Active Requests</span>
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#F0F7F5] text-[#11574A]">
+              <Inbox className="h-4 w-4" />
             </div>
-            <p className="text-2xl font-bold text-slate-900 mt-2">{activeRequests.length}</p>
+          </div>
+          <div>
+            <p className="text-2xl sm:text-3xl font-extrabold text-slate-900">{activeRequests.length}</p>
             <p className="text-[11px] text-slate-400 mt-0.5">{requests.length} total logged</p>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        <Card className={`border-l-4 ${urgentCount > 0 ? 'border-l-rose-600 bg-rose-50/20' : 'border-l-slate-400'}`}>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-500">Urgent / Reopened</span>
-              <AlertTriangle className={`h-4 w-4 ${urgentCount > 0 ? 'text-rose-600' : 'text-slate-400'}`} />
+        <div className="rounded-2xl bg-white border border-slate-200/70 p-4 sm:p-5 shadow-2xs space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-slate-500">Urgent / Reopened</span>
+            <div
+              className={`flex h-9 w-9 items-center justify-center rounded-xl ${
+                urgentCount > 0 ? 'bg-rose-50 text-rose-600' : 'bg-slate-100 text-slate-400'
+              }`}
+            >
+              <AlertTriangle className="h-4 w-4" />
             </div>
-            <p className={`text-2xl font-bold mt-2 ${urgentCount > 0 ? 'text-rose-700' : 'text-slate-900'}`}>
+          </div>
+          <div>
+            <p className={`text-2xl sm:text-3xl font-extrabold ${urgentCount > 0 ? 'text-rose-600' : 'text-slate-900'}`}>
               {urgentCount}
             </p>
-            <p className="text-[11px] text-slate-400 mt-0.5">Immediate attention required</p>
-          </CardContent>
-        </Card>
+            <p className="text-[11px] text-slate-400 mt-0.5">Immediate attention</p>
+          </div>
+        </div>
 
-        <Card className={`border-l-4 ${criticalHealthCount > 0 ? 'border-l-amber-500 bg-amber-50/20' : 'border-l-emerald-600'}`}>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-500">Guests At Risk</span>
-              <Activity className="h-4 w-4 text-amber-600" />
+        <div className="rounded-2xl bg-white border border-slate-200/70 p-4 sm:p-5 shadow-2xs space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-slate-500">Guests At Risk</span>
+            <div
+              className={`flex h-9 w-9 items-center justify-center rounded-xl ${
+                criticalHealthCount > 0 ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'
+              }`}
+            >
+              <Activity className="h-4 w-4" />
             </div>
-            <p className="text-2xl font-bold text-slate-900 mt-2">{criticalHealthCount}</p>
-            <p className="text-[11px] text-slate-400 mt-0.5">Pre-checkout monitoring</p>
-          </CardContent>
-        </Card>
+          </div>
+          <div>
+            <p className="text-2xl sm:text-3xl font-extrabold text-slate-900">{criticalHealthCount}</p>
+            <p className="text-[11px] text-slate-400 mt-0.5">Pre-checkout watch</p>
+          </div>
+        </div>
 
-        <Card className="border-l-4 border-l-emerald-600">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-500">Guest Resolution Rate</span>
-              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+        <div className="rounded-2xl bg-white border border-slate-200/70 p-4 sm:p-5 shadow-2xs space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-slate-500">Resolution Rate</span>
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+              <CheckCircle2 className="h-4 w-4" />
             </div>
-            <p className="text-2xl font-bold text-emerald-700 mt-2">{satisfactionRate}%</p>
-            <p className="text-[11px] text-slate-400 mt-0.5">Confirmed satisfied</p>
-          </CardContent>
-        </Card>
+          </div>
+          <div>
+            <p className="text-2xl sm:text-3xl font-extrabold text-emerald-700">{satisfactionRate}%</p>
+            <p className="text-[11px] text-slate-400 mt-0.5">Guest confirmed</p>
+          </div>
+        </div>
       </div>
 
+      {/* Department Open Queues (Clean Guest-Portal-style Category Tiles) */}
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-bold text-slate-900 tracking-tight">Department Queues</h2>
+          <span className="text-xs text-slate-400">Open tickets by team</span>
+        </div>
+
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          {deptQueues.map(dept => {
+            const Icon = dept.icon;
+            return (
+              <button
+                key={dept.label}
+                type="button"
+                onClick={() => navigate(dept.path)}
+                className="group flex items-center justify-between gap-3 rounded-2xl bg-white hover:border-[#11574A]/35 border border-slate-200/70 p-3.5 sm:p-4 text-left shadow-2xs hover:shadow-md transition-all active:scale-[0.98]"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#F0F7F5] text-[#11574A] group-hover:bg-[#11574A] group-hover:text-white transition-colors">
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <span className="block text-xs sm:text-sm font-bold text-slate-900 truncate">
+                      {dept.label}
+                    </span>
+                    <span className="block text-[11px] font-medium text-slate-500">
+                      {dept.count} open
+                    </span>
+                  </div>
+                </div>
+                <ChevronRight className="h-4 w-4 shrink-0 text-slate-300 group-hover:text-[#11574A] group-hover:translate-x-0.5 transition-all" />
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* Main Split: Priority Queue (Left 2 cols) + Guest Health & Feedback (Right 1 col) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left 2 Cols: Priority Action Queue */}
-        <div className="lg:col-span-2 space-y-4">
+        {/* Priority Action Queue */}
+        <div className="lg:col-span-2 space-y-3.5">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-              <ShieldAlert className="h-4 w-4 text-rose-600" />
-              <span>Priority Action Queue</span>
-            </h2>
-            <span className="text-xs text-slate-500">Requires triage or dispatch</span>
+            <h2 className="text-base font-bold text-slate-900 tracking-tight">Priority Action Queue</h2>
+            <button
+              type="button"
+              onClick={() => navigate('/staff/requests')}
+              className="inline-flex items-center gap-0.5 text-xs font-semibold text-[#11574A] hover:underline"
+            >
+              <span>View all</span>
+              <ChevronRight className="h-3.5 w-3.5" />
+            </button>
           </div>
 
           {priorityActionQueue.length === 0 ? (
-            <Card className="p-8 text-center bg-white">
-              <CheckCircle2 className="h-8 w-8 text-emerald-600 mx-auto mb-2" />
-              <p className="text-sm font-semibold text-slate-800">All Priority Tickets Handled</p>
-              <p className="text-xs text-slate-500 mt-1">No unhandled urgent tickets or reopened issues currently pending.</p>
-            </Card>
+            <div className="rounded-3xl border border-slate-200/70 bg-white p-10 text-center space-y-2 shadow-2xs">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
+                <CheckCircle2 className="h-6 w-6" />
+              </div>
+              <p className="text-sm font-bold text-slate-900">All Priority Tickets Handled</p>
+              <p className="text-xs text-slate-500">No urgent or newly unacknowledged tickets waiting right now.</p>
+            </div>
           ) : (
             <div className="space-y-3">
               {priorityActionQueue.map(req => (
-                <Card
+                <div
                   key={req.id}
-                  className={`p-4 hover:shadow-md transition-all cursor-pointer ${
-                    req.status === 'reopened' ? 'border-rose-300 bg-rose-50/30' : 'bg-white'
-                  }`}
                   onClick={() => setSelectedRequest(req)}
+                  className={`rounded-2xl border p-4 sm:p-5 transition-all cursor-pointer hover:shadow-md ${
+                    req.status === 'reopened'
+                      ? 'border-rose-300 bg-rose-50/30'
+                      : 'border-slate-200/70 bg-white hover:border-[#11574A]/30'
+                  }`}
                 >
                   <div className="flex items-start justify-between gap-3">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs font-bold text-slate-500">{req.ticketNumber}</span>
+                    <div className="space-y-1.5 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-mono text-[11px] font-bold text-slate-400">{req.ticketNumber}</span>
                         <StatusBadge status={req.status} />
                         <PriorityBadge priority={req.priority} />
                       </div>
-                      <h3 className="text-sm font-bold text-slate-900">{req.title}</h3>
-                      <p className="text-xs text-slate-600 line-clamp-1">{req.description}</p>
+                      <h3 className="text-sm font-bold text-slate-900 leading-snug">{req.title}</h3>
+                      <p className="text-xs text-slate-500 line-clamp-1">{req.description}</p>
                     </div>
 
                     <div className="text-right shrink-0">
-                      <span className="text-xs font-semibold text-slate-800 block">{req.apartmentRef}</span>
-                      <span className="text-[11px] text-slate-400">{req.guestName}</span>
+                      <span className="text-xs font-bold text-slate-900 block">{req.apartmentRef.split(' - ')[0]}</span>
+                      <span className="text-[11px] text-slate-500">{req.guestName}</span>
                       <p className="text-[10px] text-slate-400 mt-1">{formatTimeAgo(req.createdAt)}</p>
                     </div>
                   </div>
 
                   <div className="flex items-center justify-between pt-3 mt-3 border-t border-slate-100 text-xs">
                     <span className="text-slate-500 capitalize">
-                      Dept: <strong>{req.assignedDepartment}</strong>{' '}
-                      {req.assignedStaffName ? `(${req.assignedStaffName})` : '(Unassigned)'}
+                      Team: <strong className="text-slate-800">{req.assignedDepartment}</strong>{' '}
+                      {req.assignedStaffName ? `• ${req.assignedStaffName}` : '• Unassigned'}
                     </span>
                     <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
                       <Button
                         size="sm"
                         variant="outline"
-                        className="text-xs h-7 px-2.5"
+                        className="text-xs h-8 px-3 rounded-xl border-slate-200"
                         onClick={() => setAssignModalReq(req)}
                       >
                         Assign
                       </Button>
                       <Button
                         size="sm"
-                        className="text-xs h-7 px-2.5"
+                        className="text-xs h-8 px-3 rounded-xl bg-[#11574A] hover:bg-[#0D443A] text-white"
                         onClick={() => setStatusModalReq(req)}
                       >
-                        Status
+                        Update
                       </Button>
                     </div>
                   </div>
-                </Card>
+                </div>
               ))}
             </div>
           )}
-
-          {/* Department Workload Summary */}
-          <Card className="p-4 bg-white">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
-              Department Open Queue
-            </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
-              <div
-                onClick={() => navigate('/staff/maintenance')}
-                className="p-3 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors cursor-pointer border border-slate-200/70"
-              >
-                <Wrench className="h-4 w-4 text-amber-600 mx-auto mb-1" />
-                <span className="text-xs text-slate-500">Maintenance</span>
-                <p className="text-lg font-bold text-slate-900 mt-0.5">
-                  {requests.filter(r => r.assignedDepartment === 'maintenance' && !['closed', 'cancelled'].includes(r.status)).length}
-                </p>
-              </div>
-
-              <div
-                onClick={() => navigate('/staff/housekeeping')}
-                className="p-3 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors cursor-pointer border border-slate-200/70"
-              >
-                <Sparkles className="h-4 w-4 text-teal-600 mx-auto mb-1" />
-                <span className="text-xs text-slate-500">Housekeeping</span>
-                <p className="text-lg font-bold text-slate-900 mt-0.5">
-                  {requests.filter(r => r.assignedDepartment === 'housekeeping' && !['closed', 'cancelled'].includes(r.status)).length}
-                </p>
-              </div>
-
-              <div
-                onClick={() => navigate('/staff/requests?dept=reception')}
-                className="p-3 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors cursor-pointer border border-slate-200/70"
-              >
-                <User className="h-4 w-4 text-indigo-600 mx-auto mb-1" />
-                <span className="text-xs text-slate-500">Reception</span>
-                <p className="text-lg font-bold text-slate-900 mt-0.5">
-                  {requests.filter(r => r.assignedDepartment === 'reception' && !['closed', 'cancelled'].includes(r.status)).length}
-                </p>
-              </div>
-
-              <div
-                onClick={() => navigate('/staff/requests?dept=management')}
-                className="p-3 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors cursor-pointer border border-slate-200/70"
-              >
-                <ShieldAlert className="h-4 w-4 text-slate-700 mx-auto mb-1" />
-                <span className="text-xs text-slate-500">Management</span>
-                <p className="text-lg font-bold text-slate-900 mt-0.5">
-                  {requests.filter(r => r.assignedDepartment === 'management' && !['closed', 'cancelled'].includes(r.status)).length}
-                </p>
-              </div>
-            </div>
-          </Card>
         </div>
 
-        {/* Right Col: Guest Health Watch & Feedback */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-              <Activity className="h-4 w-4 text-teal-600" />
-              <span>Guest Health Watch</span>
-            </h2>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-xs text-teal-800"
-              onClick={() => navigate('/staff/health')}
-            >
-              All Stays
-            </Button>
-          </div>
-
-          <div className="space-y-2.5">
-            {healthRecords.slice(0, 4).map(h => (
-              <Card
-                key={h.id}
-                className="p-3.5 bg-white hover:border-slate-300 transition-colors cursor-pointer"
-                onClick={() => navigate('/staff/health')}
-              >
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="font-semibold text-xs text-slate-900">{h.apartmentRef}</span>
-                  <HealthStatusBadge status={h.status} />
-                </div>
-                <p className="text-xs text-slate-600">Guest: {h.guestName}</p>
-                <div className="mt-2 flex items-center justify-between text-[11px] text-slate-400">
-                  <span className="truncate max-w-[200px]">{h.reasons[0]}</span>
-                  <span className="font-bold text-slate-700">{h.score}/100</span>
-                </div>
-              </Card>
-            ))}
-          </div>
-
-          {/* Recent Private Feedback Feed */}
-          <div className="pt-2 space-y-3">
+        {/* Right Column: Guest Health Watch & In-Stay Feedback */}
+        <div className="space-y-5">
+          {/* Guest Health Watch */}
+          <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h2 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
-                <Star className="h-4 w-4 text-amber-500 fill-amber-500" />
-                <span>In-Stay Feedback</span>
-              </h2>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-xs text-teal-800"
-                onClick={() => navigate('/staff/feedback')}
+              <h2 className="text-base font-bold text-slate-900 tracking-tight">Guest Health Watch</h2>
+              <button
+                type="button"
+                onClick={() => navigate('/staff/health')}
+                className="text-xs font-semibold text-[#11574A] hover:underline"
               >
-                View
-              </Button>
+                All Stays
+              </button>
+            </div>
+
+            <div className="space-y-2.5">
+              {healthRecords.slice(0, 4).map(h => (
+                <div
+                  key={h.id}
+                  onClick={() => navigate('/staff/health')}
+                  className="rounded-2xl border border-slate-200/70 bg-white p-4 hover:border-[#11574A]/30 hover:shadow-sm transition-all cursor-pointer"
+                >
+                  <div className="flex items-center justify-between gap-2 mb-1.5">
+                    <span className="font-bold text-xs text-slate-900 truncate">{h.apartmentRef.split(' - ')[0]} • {h.guestName}</span>
+                    <HealthStatusBadge status={h.status} />
+                  </div>
+                  <div className="flex items-center justify-between text-[11px] text-slate-500 mt-2">
+                    <span className="truncate pr-2">{h.reasons[0]}</span>
+                    <span className="font-mono font-bold text-slate-800 shrink-0">{h.score}/100</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Recent In-Stay Feedback */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-bold text-slate-900 tracking-tight">Recent Feedback</h2>
+              <button
+                type="button"
+                onClick={() => navigate('/staff/feedback')}
+                className="text-xs font-semibold text-[#11574A] hover:underline"
+              >
+                View All
+              </button>
             </div>
 
             {feedback.length === 0 ? (
-              <p className="text-xs text-slate-400 italic">No feedback submitted yet.</p>
+              <div className="rounded-2xl border border-slate-200/70 bg-white p-5 text-center text-xs text-slate-400">
+                No feedback submitted yet.
+              </div>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-2.5">
                 {feedback.slice(0, 3).map(f => (
-                  <Card key={f.id} className="p-3 bg-white text-xs space-y-1">
+                  <div key={f.id} className="rounded-2xl border border-slate-200/70 bg-white p-4 text-xs space-y-1.5">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1 text-amber-500">
+                      <div className="flex items-center gap-0.5 text-amber-400">
                         {Array.from({ length: f.overallRating }).map((_, i) => (
-                          <Star key={i} className="h-3 w-3 fill-amber-400" />
+                          <Star key={i} className="h-3.5 w-3.5 fill-amber-400" />
                         ))}
                       </div>
                       <span className="text-[10px] text-slate-400">{formatTimeAgo(f.createdAt)}</span>
                     </div>
-                    <p className="font-medium text-slate-800 truncate">{f.apartmentRef}</p>
-                    {f.comments && <p className="text-slate-600 italic">"{f.comments}"</p>}
-                  </Card>
+                    <p className="font-bold text-slate-900 truncate">{f.apartmentRef}</p>
+                    {f.comments && <p className="text-slate-600 italic leading-relaxed">"{f.comments}"</p>}
+                  </div>
                 ))}
               </div>
             )}
@@ -344,7 +397,6 @@ export const OverviewPage: React.FC = () => {
             content,
             isInternal,
           });
-          // Update selected request in place
           setSelectedRequest(requestService.getRequestById(requestId) || null);
         }}
       />
@@ -389,4 +441,3 @@ export const OverviewPage: React.FC = () => {
     </div>
   );
 };
-
