@@ -29,3 +29,4 @@ describe('Cryptographic Utilities', () => {
     expect(dataUrl).toMatch(/^data:image\/png;base64,/);
   });
 });
+

@@ -59,3 +59,4 @@ export const QuickItemCounter: React.FC<QuickItemCounterProps> = ({
     </div>
   );
 };
+

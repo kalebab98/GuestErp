@@ -162,3 +162,4 @@ describe('Request Management Workflow', () => {
     expect(guestVisible![0].content).toContain('Your door lock has been serviced');
   });
 });
+

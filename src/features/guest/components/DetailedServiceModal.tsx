@@ -400,3 +400,4 @@ export const DetailedServiceModal: React.FC<DetailedServiceModalProps> = ({
     </Modal>
   );
 };
+

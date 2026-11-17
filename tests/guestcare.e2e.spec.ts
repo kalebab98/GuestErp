@@ -60,3 +60,4 @@ test.describe('GuestCare E2E Application Flows', () => {
     await expect(page.getByText('Workload by Department')).toBeVisible();
   });
 });
+

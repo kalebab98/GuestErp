@@ -42,3 +42,4 @@ describe('PMS Integration Adapter', () => {
     expect(byUnit[0].apartment.unitNumber).toBe('402');
   });
 });
+

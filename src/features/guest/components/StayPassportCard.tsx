@@ -122,3 +122,4 @@ export const StayPassportCard: React.FC<StayPassportCardProps> = ({ session, onC
     </div>
   );
 };
+
