@@ -93,7 +93,7 @@ export const StatusChangeModal: React.FC<StatusChangeModalProps> = ({
             </p>
             <Textarea
               label="Resolution Summary"
-              placeholder="e.g., Cleaned AC filters and recharged unit. Air temperature tested at 20°C."
+              placeholder="e.g., Cleaned shower valve and restored normal hot water pressure."
               rows={3}
               value={resolutionNotes}
               onChange={e => setResolutionNotes(e.target.value)}

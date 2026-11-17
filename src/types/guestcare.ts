@@ -1,13 +1,14 @@
 // Project: GuestCare
-// Domain types and models - Upgraded for Luxury Hospitality & Detailed Services
+// Domain types and models
 
 export type CategoryCode =
   | 'maintenance'
   | 'housekeeping'
+  | 'laundry'
+  | 'shop_delivery'
   | 'comfort'
   | 'internet_tech'
   | 'guest_services'
-  | 'noise'
   | 'other';
 
 export type Department = 'maintenance' | 'housekeeping' | 'reception' | 'management';
@@ -42,12 +43,32 @@ export interface ServiceSubcategory {
 
 export interface PresetServiceItem {
   id: string;
+  categoryCode: CategoryCode;
   name: string;
-  subcategoryId?: string;
-  description?: string;
   unit?: string;
   defaultQty?: number;
   maxQty?: number;
+  priceLabel?: string;
+  isActive?: boolean;
+}
+
+export interface FAQItem {
+  id: string;
+  question: string;
+  answer: string;
+  isActive: boolean;
+}
+
+export interface LocalServiceProvider {
+  id: string;
+  name: string;
+  category: string; // e.g. 'Coffee & Tea', 'Food Delivery', 'Mini Market & Cards', 'Pharmacy'
+  description: string;
+  itemsOffered: string[];
+  phone: string;
+  whatsapp?: string;
+  hours: string;
+  isActive: boolean;
 }
 
 export interface Category {
@@ -160,7 +181,6 @@ export interface GuestRequest {
   attachments?: RequestAttachment[];
   comments?: RequestComment[];
   statusHistory?: StatusHistoryEntry[];
-  // Detailed service properties:
   requestedItems?: RequestedItemPayload[];
   preferredTimeWindow?: string;
   roomAccessPermission?: boolean;
@@ -182,7 +202,7 @@ export interface GuestFeedback {
   reservationRef: string;
   apartmentRef: string;
   guestName: string;
-  overallRating: number; // 1-5
+  overallRating: number;
   cleanlinessRating?: number;
   staffRating?: number;
   comfortRating?: number;
@@ -209,7 +229,7 @@ export interface GuestHealthRecord {
   apartmentRef: string;
   guestName: string;
   status: GuestHealthStatus;
-  score: number; // 0-100
+  score: number;
   reasons: string[];
   lastCalculatedAt: string;
   updatedAt: string;

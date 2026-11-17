@@ -31,7 +31,7 @@ export const HomePage: React.FC = () => {
       guest: 'Sarah Jenkins',
       statusTag: 'In Progress Ticket',
       badgeColor: 'bg-amber-100 text-amber-800 border-amber-200',
-      description: 'Master bedroom air conditioning humming loudly and blowing room temperature air.',
+      description: 'Master bathroom shower hot water pressure low — technician assigned.',
     },
     {
       id: 'RES-89212',
@@ -151,8 +151,8 @@ export const HomePage: React.FC = () => {
             {/* Feature Pills */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs text-teal-100">
               <div className="rounded-xl bg-[#0F2D28] p-3 border border-[#184640] space-y-1">
-                <span className="font-bold text-[#E8DCC8] block">Multi-Option Services</span>
-                <p className="text-[11px] text-slate-400">Pillow menus, towels, AC, repairs, quiet intervention</p>
+                <span className="font-bold text-[#E8DCC8] block">Everyday Services</span>
+                <p className="text-[11px] text-slate-400">Housekeeping, laundry, repairs, local shop & delivery</p>
               </div>
               <div className="rounded-xl bg-[#0F2D28] p-3 border border-[#184640] space-y-1">
                 <span className="font-bold text-[#E8DCC8] block">Two-Way Resolution</span>

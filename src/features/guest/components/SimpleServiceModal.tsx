@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { Category, Priority, RequestedItemPayload } from '@/types/guestcare';
+import { Category, Priority, RequestedItemPayload, LocalServiceProvider } from '@/types/guestcare';
+import { portalConfigService } from '@/features/config/portalConfigService';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { PhotoUploader, UploadedFile } from './PhotoUploader';
-import { Plus, Minus, Clock, Check, AlertCircle } from 'lucide-react';
+import { Plus, Minus, Check, AlertCircle, Phone, MessageCircle, Store } from 'lucide-react';
 
 interface SimpleServiceModalProps {
   isOpen: boolean;
   onClose: () => void;
   category: Category | null;
   initialPreset?: string;
+  apartmentRef?: string;
   onSubmit: (data: {
     categoryId: string;
     title: string;
@@ -25,34 +27,40 @@ export const SimpleServiceModal: React.FC<SimpleServiceModalProps> = ({
   onClose,
   category,
   initialPreset,
+  apartmentRef = 'My Apartment',
   onSubmit,
 }) => {
-  const [selectedChip, setSelectedChip] = useState<string>('');
+  const [generalIssue, setGeneralIssue] = useState<string>('');
   const [itemQuantities, setItemQuantities] = useState<Record<string, number>>({});
   const [note, setNote] = useState('');
   const [isUrgent, setIsUrgent] = useState(false);
   const [attachments, setAttachments] = useState<UploadedFile[]>([]);
+  const [providers, setProviders] = useState<LocalServiceProvider[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (category && isOpen) {
-      setSelectedChip(initialPreset || '');
+      setGeneralIssue(initialPreset || '');
       setItemQuantities({});
       setNote('');
-      setIsUrgent(category.code === 'noise');
+      setIsUrgent(false);
       setAttachments([]);
       setError(null);
+      if (category.code === 'shop_delivery') {
+        setProviders(portalConfigService.getProviders(true));
+      } else {
+        setProviders([]);
+      }
     }
   }, [category, isOpen, initialPreset]);
 
   if (!category) return null;
 
-  const hasPresetItems = category.code === 'housekeeping' || category.code === 'comfort';
-  const topItems = (category.presetItems || []).slice(0, 6);
-  const quickChips = (category.commonIssues || []).slice(0, 5);
+  const deliverableItems = category.presetItems || [];
+  const quickChips = category.commonIssues || [];
 
-  const updateQty = (id: string, delta: number, max = 6) => {
+  const updateQty = (id: string, delta: number, max = 10) => {
     setItemQuantities(prev => {
       const next = Math.max(0, Math.min(max, (prev[id] || 0) + delta));
       return { ...prev, [id]: next };
@@ -63,39 +71,38 @@ export const SimpleServiceModal: React.FC<SimpleServiceModalProps> = ({
     e.preventDefault();
 
     const requestedItems: RequestedItemPayload[] = [];
-    topItems.forEach(item => {
+    deliverableItems.forEach(item => {
       const qty = itemQuantities[item.id] || 0;
       if (qty > 0) {
         requestedItems.push({ name: item.name, quantity: qty, unit: item.unit });
       }
     });
 
-    let title = selectedChip;
+    let title = generalIssue.trim();
     if (!title && requestedItems.length > 0) {
       title = requestedItems.map(i => `${i.quantity}x ${i.name}`).join(', ');
     }
-    if (!title && note.trim()) {
-      title = note.trim().slice(0, 60);
-    }
 
     if (!title) {
-      setError('Please select an option or write a short note.');
+      setError('Please enter your general issue/request or select items to deliver.');
       return;
     }
 
     setError(null);
     setLoading(true);
     try {
-      const description =
-        note.trim() ||
-        (requestedItems.length > 0
-          ? `Requested: ${requestedItems.map(i => `${i.quantity}x ${i.name}`).join(', ')}`
-          : selectedChip);
+      const itemsText =
+        requestedItems.length > 0
+          ? `Items: ${requestedItems.map(i => `${i.quantity}x ${i.name}`).join(', ')}`
+          : '';
+      const combinedDesc = [title, itemsText, note.trim() ? `Note: ${note.trim()}` : '']
+        .filter(Boolean)
+        .join('\n');
 
       await onSubmit({
         categoryId: category.id,
         title,
-        description,
+        description: combinedDesc,
         priority: isUrgent ? 'urgent' : category.defaultPriority,
         requestedItems: requestedItems.length > 0 ? requestedItems : undefined,
         attachments,
@@ -113,27 +120,27 @@ export const SimpleServiceModal: React.FC<SimpleServiceModalProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title={category.shortName || category.name}
-      description={`Response time: ~${category.slaMinutes} min`}
+      description={`Estimated response: ~${category.slaMinutes} min`}
       size="md"
     >
-      <form onSubmit={handleSubmit} className="space-y-5 text-left">
-        {/* Quick Tap Options */}
+      <form onSubmit={handleSubmit} className="space-y-4 text-left">
+        {/* 1. Quick Tap Common Options */}
         {quickChips.length > 0 && (
           <div className="space-y-2">
             <label className="text-xs font-semibold text-slate-500">
-              Select a common request
+              Quick select
             </label>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1.5">
               {quickChips.map((chip, idx) => {
-                const active = selectedChip === chip;
+                const active = generalIssue === chip;
                 return (
                   <button
                     key={idx}
                     type="button"
-                    onClick={() => setSelectedChip(active ? '' : chip)}
-                    className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-medium transition-all border ${
+                    onClick={() => setGeneralIssue(active ? '' : chip)}
+                    className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium transition-all border ${
                       active
-                        ? 'bg-[#11574A] text-white border-[#11574A] shadow-xs'
+                        ? 'bg-[#11574A] text-white border-[#11574A] shadow-2xs'
                         : 'bg-[#F7F8F9] text-slate-700 border-slate-200/80 hover:bg-slate-100'
                     }`}
                   >
@@ -146,27 +153,32 @@ export const SimpleServiceModal: React.FC<SimpleServiceModalProps> = ({
           </div>
         )}
 
-        {/* Simple Item Quantity Picker (only for supplies / comfort) */}
-        {hasPresetItems && topItems.length > 0 && (
+        {/* 2. Deliverable Items (Editable from Staff Dashboard) */}
+        {deliverableItems.length > 0 && (
           <div className="space-y-2">
             <label className="text-xs font-semibold text-slate-500">
               Or add items to deliver
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {topItems.map(item => {
+              {deliverableItems.map(item => {
                 const qty = itemQuantities[item.id] || 0;
                 return (
                   <div
                     key={item.id}
-                    className={`flex items-center justify-between rounded-xl px-3 py-2.5 border transition-colors ${
+                    className={`flex items-center justify-between rounded-xl px-3 py-2 border transition-colors ${
                       qty > 0
                         ? 'bg-[#F0F7F5] border-[#11574A]/40'
                         : 'bg-[#F7F8F9] border-transparent'
                     }`}
                   >
-                    <span className="text-xs font-medium text-slate-800 truncate pr-2">
-                      {item.name}
-                    </span>
+                    <div className="min-w-0 pr-2">
+                      <span className="block text-xs font-medium text-slate-800 truncate">
+                        {item.name}
+                      </span>
+                      {item.priceLabel && (
+                        <span className="block text-[10px] text-slate-400">{item.priceLabel}</span>
+                      )}
+                    </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <button
                         type="button"
@@ -194,7 +206,27 @@ export const SimpleServiceModal: React.FC<SimpleServiceModalProps> = ({
           </div>
         )}
 
-        {/* Short Note */}
+        {/* 3. General Issue / Request Box (REQUIRED BEFORE Additional Note) */}
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-slate-700">
+            General issue / What do you need?
+          </label>
+          <input
+            type="text"
+            value={generalIssue}
+            onChange={e => setGeneralIssue(e.target.value)}
+            placeholder={
+              category.code === 'shop_delivery'
+                ? 'e.g. 2 hot coffees, mobile recharge card, bottle of water...'
+                : category.code === 'laundry'
+                ? 'e.g. Wash & fold pickup for 1 laundry bag...'
+                : 'Describe your main issue or request...'
+            }
+            className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#11574A] focus:outline-none focus:ring-1 focus:ring-[#11574A] transition-colors"
+          />
+        </div>
+
+        {/* 4. Additional Note (Optional) */}
         <div className="space-y-1.5">
           <label className="text-xs font-semibold text-slate-500">
             Additional note (optional)
@@ -203,18 +235,63 @@ export const SimpleServiceModal: React.FC<SimpleServiceModalProps> = ({
             rows={2}
             value={note}
             onChange={e => setNote(e.target.value)}
-            placeholder="Any extra details or preferred time..."
+            placeholder="Preferred time, brand preference, or extra details..."
             className="w-full rounded-xl border border-slate-200 bg-[#F7F8F9] px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-[#11574A] focus:outline-none focus:ring-1 focus:ring-[#11574A] transition-colors"
           />
         </div>
+
+        {/* 5. Direct Local Service Providers (for Shop & Delivery) */}
+        {category.code === 'shop_delivery' && providers.length > 0 && (
+          <div className="space-y-2 pt-2 border-t border-slate-100">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-600">
+              <Store className="h-3.5 w-3.5 text-[#11574A]" />
+              <span>Or contact local shop directly</span>
+            </div>
+            <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+              {providers.map(p => (
+                <div
+                  key={p.id}
+                  className="flex items-center justify-between gap-2 rounded-xl bg-[#F7F8F9] px-3 py-2 text-xs"
+                >
+                  <div className="min-w-0">
+                    <p className="font-semibold text-slate-800 truncate">{p.name}</p>
+                    <p className="text-[11px] text-slate-500 truncate">{p.category} • {p.hours}</p>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <a
+                      href={`tel:${p.phone.replace(/\s+/g, '')}`}
+                      className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-700 hover:text-[#11574A]"
+                      title={`Call ${p.name}`}
+                    >
+                      <Phone className="h-3.5 w-3.5" />
+                    </a>
+                    {p.whatsapp && (
+                      <a
+                        href={`https://wa.me/${p.whatsapp.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
+                          `Hello ${p.name}, I am staying at ${apartmentRef} and would like to order: `
+                        )}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-[#25D366] text-white hover:bg-[#20BA5A]"
+                        title={`WhatsApp ${p.name}`}
+                      >
+                        <MessageCircle className="h-3.5 w-3.5" />
+                      </a>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Compact Photo Attachment */}
         {(category.code === 'maintenance' || category.code === 'other' || category.code === 'comfort') && (
           <PhotoUploader files={attachments} onFilesChange={setAttachments} maxFiles={2} />
         )}
 
-        {/* Simple Urgent Toggle */}
-        {(category.code === 'maintenance' || category.code === 'noise') && (
+        {/* Urgent Toggle (Maintenance only) */}
+        {category.code === 'maintenance' && (
           <label className="flex items-center gap-2.5 cursor-pointer text-xs text-slate-600">
             <input
               type="checkbox"
@@ -222,7 +299,7 @@ export const SimpleServiceModal: React.FC<SimpleServiceModalProps> = ({
               onChange={e => setIsUrgent(e.target.checked)}
               className="h-4 w-4 rounded border-slate-300 text-rose-600 focus:ring-rose-500"
             />
-            <span>Mark as urgent (needs immediate attention)</span>
+            <span>Mark as urgent (active water leak, power outage, lockout)</span>
           </label>
         )}
 

@@ -122,7 +122,7 @@ export const ConfirmResolutionModal: React.FC<ConfirmResolutionModalProps> = ({
             </div>
             <Textarea
               label="What remains unresolved? (Required)"
-              placeholder="e.g., The AC works, but water is still leaking onto the carpet..."
+              placeholder="e.g., The shower valve was checked, but hot water pressure is still low..."
               rows={3}
               value={notes}
               onChange={e => setNotes(e.target.value)}

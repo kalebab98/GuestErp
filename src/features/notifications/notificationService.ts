@@ -41,7 +41,7 @@ class NotificationService {
           recipientId: 'maintenance',
           channel: 'in_app',
           title: 'New Maintenance Request',
-          message: 'Penthouse 402 reported: AC blowing room temperature air',
+          message: 'Penthouse 402 reported: Master bathroom hot water pressure low',
           referenceType: 'request',
           status: 'sent',
           retryCount: 0,

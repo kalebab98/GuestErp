@@ -77,3 +77,4 @@ export const GuestBottomNav: React.FC<GuestBottomNavProps> = ({
     </nav>
   );
 };
+

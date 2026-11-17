@@ -14,6 +14,7 @@ import {
   QrCode,
   BarChart3,
   Settings,
+  Sliders,
   Bell,
   ExternalLink,
   ChevronRight,
@@ -49,6 +50,7 @@ export const StaffLayout: React.FC = () => {
     { to: '/staff/housekeeping', label: 'Housekeeping', icon: Sparkles },
     { to: '/staff/health', label: 'Guest Health', icon: Activity },
     { to: '/staff/feedback', label: 'Guest Feedback', icon: MessageSquareHeart },
+    { to: '/staff/portal-config', label: 'Portal Items & FAQs', icon: Sliders },
     { to: '/staff/reports', label: 'Reports & Analytics', icon: BarChart3 },
     { to: '/staff/settings', label: 'Settings', icon: Settings },
   ];

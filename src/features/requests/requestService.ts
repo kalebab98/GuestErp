@@ -1,5 +1,5 @@
 // Request Management & Operations Service
-// Upgraded with rich subcategories, item catalogs, and tailored hospitality presets
+// Categories synced live with Staff PortalConfigService (no AC, Laundry + Shop & Delivery, Front Desk)
 
 import {
   Category,
@@ -16,38 +16,22 @@ import {
 } from '@/types/guestcare';
 import { notificationService } from '@/features/notifications/notificationService';
 import { GuestHealthEngine } from '@/features/health/healthEngine';
+import { portalConfigService } from '@/features/config/portalConfigService';
 
-export const CATEGORIES: Category[] = [
+export const BASE_CATEGORIES: Category[] = [
   {
     id: 'cat-maint',
     code: 'maintenance',
     name: 'Maintenance & Repairs',
     shortName: 'Maintenance',
-    tagline: 'Engineering technicians on standby for climate, plumbing, electrical, and fixtures',
-    description: 'Air conditioning, plumbing, power outlets, kitchen appliances, and hardware',
+    tagline: 'Plumbing, hot water, lights, power outlets, appliances, and locks',
+    description: 'Plumbing, hot water, electrical outlets, kitchen appliances, doors, and windows',
     defaultDepartment: 'maintenance',
     defaultPriority: 'high',
     slaMinutes: 30,
     iconName: 'Wrench',
     displayOrder: 1,
     isActive: true,
-    subcategories: [
-      { id: 'sub-ac', name: 'Air Conditioning & Climate', description: 'Cooling, heating, fan speed, noise' },
-      { id: 'sub-plumb', name: 'Plumbing & Restroom', description: 'Water pressure, drains, hot water, faucets' },
-      { id: 'sub-elec', name: 'Lighting & Power', description: 'Bulbs, wall sockets, light switches, fuses' },
-      { id: 'sub-appliance', name: 'Kitchen Appliances', description: 'Refrigerator, cooktop, dishwasher, oven, microwave' },
-      { id: 'sub-fixtures', name: 'Doors, Safe & Windows', description: 'Keycard lock, safe code reset, balcony slider, blinds' },
-    ],
-    commonIssues: [
-      'AC blowing room temperature air',
-      'Shower drain draining slowly',
-      'Low water pressure in shower',
-      'Electronic safe won’t open / error code',
-      'Refrigerator temperature feels too warm',
-      'Bedside lamp bulb flickering',
-      'Balcony door latch stuck',
-      'Dishwasher not draining after cycle',
-    ],
     createdAt: '2026-11-01T00:00:00Z',
   },
   {
@@ -55,205 +39,114 @@ export const CATEGORIES: Category[] = [
     code: 'housekeeping',
     name: 'Housekeeping & Supplies',
     shortName: 'Housekeeping',
-    tagline: 'Fresh linens, luxury toiletries, coffee refills, and full apartment refresh',
-    description: 'Extra towels, pillow menu, toiletries, coffee pods, trash collection, and cleaning',
+    tagline: 'Fresh towels, room cleaning, toiletries, and linen change',
+    description: 'Fresh towels, bed linen, apartment cleaning, toiletries, and trash removal',
     defaultDepartment: 'housekeeping',
     defaultPriority: 'medium',
     slaMinutes: 25,
     iconName: 'Sparkles',
     displayOrder: 2,
     isActive: true,
-    subcategories: [
-      { id: 'sub-towels', name: 'Towels & Linens', description: 'Plush bath towels, robes, bed sheets' },
-      { id: 'sub-toiletries', name: 'Luxury Toiletries', description: 'Shampoo, body wash, dental & shaving kits' },
-      { id: 'sub-coffee', name: 'Coffee & Refreshments', description: 'Nespresso capsules, fine tea, sugar, water' },
-      { id: 'sub-cleaning', name: 'Room Refresh & Cleaning', description: 'Full room refresh, linen change, trash removal' },
-    ],
-    presetItems: [
-      { id: 'item-bath-towel', name: 'Plush Bath Sheets', unit: 'towels', defaultQty: 2, maxQty: 6 },
-      { id: 'item-hand-towel', name: 'Hand & Face Towels', unit: 'towels', defaultQty: 2, maxQty: 4 },
-      { id: 'item-bath-robe', name: 'Luxury Cotton Bathrobe', unit: 'robes', defaultQty: 1, maxQty: 4 },
-      { id: 'item-nespresso', name: 'Nespresso Coffee Pods', unit: 'pods', defaultQty: 4, maxQty: 12 },
-      { id: 'item-tea-box', name: 'Artisan Tea Selection', unit: 'sachets', defaultQty: 4, maxQty: 10 },
-      { id: 'item-dental-kit', name: 'Dental Kit (Toothbrush + Paste)', unit: 'kits', defaultQty: 2, maxQty: 4 },
-      { id: 'item-shaving-kit', name: 'Shaving Kit & Cream', unit: 'kits', defaultQty: 1, maxQty: 3 },
-      { id: 'item-extra-pillow', name: 'Hypoallergenic Pillow', unit: 'pillows', defaultQty: 2, maxQty: 4 },
-      { id: 'item-bottled-water', name: 'Still Mineral Water (750ml)', unit: 'bottles', defaultQty: 2, maxQty: 6 },
-      { id: 'item-trash-pickup', name: 'Trash & Recycling Collection', unit: 'service', defaultQty: 1, maxQty: 1 },
-    ],
-    commonIssues: [
-      'Full room refresh & bed makeup',
-      'Fresh bath towel replacement',
-      'Replenish Nespresso capsules & tea',
-      'Fresh bed linen change',
-      'Extra shampoo, conditioner & shower gel',
-      'Please collect trash & recyclables',
-    ],
+    createdAt: '2026-11-01T00:00:00Z',
+  },
+  {
+    id: 'cat-laundry',
+    code: 'laundry',
+    name: 'Laundry & Ironing',
+    shortName: 'Laundry',
+    tagline: 'Wash & fold, garment ironing, dry cleaning, and laundry bag pickup',
+    description: 'Wash & fold pickup, shirt pressing, dry cleaning, and hangers',
+    defaultDepartment: 'housekeeping',
+    defaultPriority: 'medium',
+    slaMinutes: 30,
+    iconName: 'Shirt',
+    displayOrder: 3,
+    isActive: true,
+    createdAt: '2026-11-01T00:00:00Z',
+  },
+  {
+    id: 'cat-shop',
+    code: 'shop_delivery',
+    name: 'Shop & Local Delivery',
+    shortName: 'Shop & Delivery',
+    tagline: 'Coffee, tea, food, mobile cards, cigarettes, water, and daily items',
+    description: 'Order common essentials or connect with local shops for coffee, tea, food, cards, and groceries',
+    defaultDepartment: 'reception',
+    defaultPriority: 'medium',
+    slaMinutes: 25,
+    iconName: 'ShoppingBag',
+    displayOrder: 4,
+    isActive: true,
     createdAt: '2026-11-01T00:00:00Z',
   },
   {
     id: 'cat-comfort',
     code: 'comfort',
-    name: 'Comfort & Room Conditions',
+    name: 'Comfort & Essentials',
     shortName: 'Comfort',
-    tagline: 'Personalized climate, pillow selection, sleep wellness, and kitchenware',
-    description: 'Pillow menu, temperature fine-tuning, sleep accessories, kitchen essentials',
+    tagline: 'Fans, extra blankets, iron & board, pillows, and kitchenware',
+    description: 'Standing fans, extra blankets, pillows, iron & ironing board, and glassware',
     defaultDepartment: 'reception',
     defaultPriority: 'medium',
-    slaMinutes: 40,
+    slaMinutes: 35,
     iconName: 'BedDouble',
-    displayOrder: 3,
+    displayOrder: 5,
     isActive: true,
-    subcategories: [
-      { id: 'sub-pillow-menu', name: 'Pillow Menu & Sleep Care', description: 'Firm, memory foam, down, sleep kit' },
-      { id: 'sub-ambient', name: 'Ambient Temperature & Air', description: 'Dyson fan, extra heater, air purifier' },
-      { id: 'sub-kitchenware', name: 'Kitchenware & Glassware', description: 'Wine glasses, blender, extra pots' },
-      { id: 'sub-utility', name: 'Utility & Laundry Helpers', description: 'Ironing board, clothes steamer, drying rack' },
-    ],
-    presetItems: [
-      { id: 'item-memory-pillow', name: 'Memory Foam Contour Pillow', unit: 'pillow', defaultQty: 1, maxQty: 2 },
-      { id: 'item-down-pillow', name: 'Soft Goose Feather Pillow', unit: 'pillow', defaultQty: 1, maxQty: 2 },
-      { id: 'item-sleep-kit', name: 'Sleep Kit (Eye mask & earplugs)', unit: 'set', defaultQty: 2, maxQty: 4 },
-      { id: 'item-dyson-fan', name: 'Portable Cooling Fan', unit: 'unit', defaultQty: 1, maxQty: 1 },
-      { id: 'item-air-purifier', name: 'HEPA Air Purifier', unit: 'unit', defaultQty: 1, maxQty: 1 },
-      { id: 'item-iron-board', name: 'Steam Iron & Full Ironing Board', unit: 'set', defaultQty: 1, maxQty: 1 },
-      { id: 'item-wine-glasses', name: 'Set of Crystal Wine Glasses', unit: 'glasses', defaultQty: 4, maxQty: 8 },
-      { id: 'item-extra-blanket', name: 'Warm Fleece Throw Blanket', unit: 'blanket', defaultQty: 1, maxQty: 2 },
-    ],
-    commonIssues: [
-      'Room feels slightly too warm / request fan',
-      'Request firm orthopedic pillow',
-      'Steam iron and ironing board needed',
-      'Wine glasses & corkscrew opener needed',
-      'Extra warm duvet / blanket',
-    ],
     createdAt: '2026-11-01T00:00:00Z',
   },
   {
     id: 'cat-tech',
     code: 'internet_tech',
-    name: 'Internet & Technology',
+    name: 'Wi-Fi & Tech',
     shortName: 'Wi-Fi & Tech',
-    tagline: 'High-speed 500Mbps fiber Wi-Fi, Smart TV streaming, adapters, and workstation support',
-    description: 'Wi-Fi speed, Chromecast/AirPlay, Smart TV, international adapters, HDMI',
+    tagline: 'Wi-Fi help, Smart TV, power adapters, and extension cords',
+    description: 'Wi-Fi connection help, Smart TV, remote batteries, HDMI cables, and adapters',
     defaultDepartment: 'reception',
     defaultPriority: 'medium',
     slaMinutes: 30,
     iconName: 'Wifi',
-    displayOrder: 4,
+    displayOrder: 6,
     isActive: true,
-    subcategories: [
-      { id: 'sub-wifi', name: 'Wi-Fi & Network', description: '5GHz connection, high-speed streaming, credentials' },
-      { id: 'sub-tv', name: 'Smart TV & Streaming', description: 'AirPlay, Chromecast, Netflix app, TV remote' },
-      { id: 'sub-adapters', name: 'Workstation & Cables', description: 'Universal travel adapters, HDMI, power strip' },
-      { id: 'sub-access-card', name: 'Keycard & Digital Key', description: 'Card re-magnetization, mobile phone key' },
-    ],
-    presetItems: [
-      { id: 'item-travel-adapter', name: 'Universal International Power Adapter', unit: 'adapter', defaultQty: 1, maxQty: 3 },
-      { id: 'item-hdmi-cable', name: '4K HDMI Cable (2 meters)', unit: 'cable', defaultQty: 1, maxQty: 2 },
-      { id: 'item-power-strip', name: 'Multi-outlet Surge Power Strip', unit: 'unit', defaultQty: 1, maxQty: 2 },
-      { id: 'item-remote-battery', name: 'New Smart TV Remote Batteries', unit: 'pair', defaultQty: 1, maxQty: 1 },
-    ],
-    commonIssues: [
-      'Need assistance streaming phone to Smart TV',
-      'Wi-Fi signal drops in bedroom',
-      'Request universal international power adapter',
-      'Need HDMI cable to connect laptop to TV',
-      'TV remote unresponsive',
-    ],
     createdAt: '2026-11-01T00:00:00Z',
   },
   {
     id: 'cat-services',
     code: 'guest_services',
-    name: 'Concierge & Guest Services',
-    shortName: 'Concierge',
-    tagline: 'Luggage handling, late checkout, airport transfers, key duplicates, and local bookings',
-    description: 'Late checkout, luggage storage, extra keys, airport transfer, delivery drop-off',
+    name: 'Front Desk Services',
+    shortName: 'Front Desk',
+    tagline: 'Late check-out, luggage help, extra keys, and taxi bookings',
+    description: 'Late check-out, luggage storage, extra apartment keys, and taxi/airport rides',
     defaultDepartment: 'reception',
     defaultPriority: 'low',
-    slaMinutes: 30,
+    slaMinutes: 20,
     iconName: 'Bell',
-    displayOrder: 5,
+    displayOrder: 7,
     isActive: true,
-    subcategories: [
-      { id: 'sub-late-checkout', name: 'Late Checkout Request', description: 'Extend departure to 12 PM, 1 PM, or 2 PM' },
-      { id: 'sub-luggage', name: 'Luggage Assistance', description: 'Arrival baggage pickup or checkout storage' },
-      { id: 'sub-keys', name: 'Extra Apartment Keycards', description: 'Additional keycards for companions' },
-      { id: 'sub-transfer', name: 'Private Chauffeur & Transfers', description: 'Airport pickup or executive town car' },
-      { id: 'sub-delivery', name: 'Parcel & Package Delivery', description: 'Deliver front desk parcels to apartment door' },
-    ],
-    presetItems: [
-      { id: 'item-extra-keys', name: 'Extra Room Keycard', unit: 'keys', defaultQty: 1, maxQty: 2 },
-      { id: 'item-bellman', name: 'Baggage Assistance at Departure', unit: 'service', defaultQty: 1, maxQty: 1 },
-    ],
-    commonIssues: [
-      'Request late checkout extension',
-      'Luggage pickup assistance at checkout',
-      'Extra keycard requested for companion',
-      'Please bring package delivered at reception to room',
-      'Airport transfer booking for departure',
-    ],
-    createdAt: '2026-11-01T00:00:00Z',
-  },
-  {
-    id: 'cat-noise',
-    code: 'noise',
-    name: 'Noise & Disturbances',
-    shortName: 'Disturbances',
-    tagline: 'Rapid 15-minute quiet intervention for neighbor noise, corridor, or external sounds',
-    description: 'Neighbor volume, corridor disturbances, mechanical noise, discrete intervention',
-    defaultDepartment: 'reception',
-    defaultPriority: 'urgent',
-    slaMinutes: 15,
-    iconName: 'VolumeX',
-    displayOrder: 6,
-    isActive: true,
-    subcategories: [
-      { id: 'sub-neighbor', name: 'Neighboring Unit Noise', description: 'Loud music, party, loud television, shouting' },
-      { id: 'sub-corridor', name: 'Corridor & Public Area', description: 'Footsteps, talking in hallway, doors slamming' },
-      { id: 'sub-external', name: 'External & Street Noise', description: 'Delivery trucks, street activity, exterior alarms' },
-      { id: 'sub-mechanical', name: 'Mechanical & Pipe Whistling', description: 'Elevator hum, water pipe hammer, HVAC resonance' },
-    ],
-    commonIssues: [
-      'Loud television / music from neighboring apartment',
-      'Frequent loud door slamming in corridor',
-      'Unusual mechanical humming sound from ceiling/closet',
-      'People gathering noisily in corridor',
-    ],
     createdAt: '2026-11-01T00:00:00Z',
   },
   {
     id: 'cat-other',
     code: 'other',
-    name: 'Special Requests & Inquiries',
-    shortName: 'Special Requests',
-    tagline: 'Billing, special celebrations, custom assistance, and direct manager dialogue',
-    description: 'Invoicing, surprise setups, accessibility needs, and custom accommodations',
+    name: 'Other Requests',
+    shortName: 'Other',
+    tagline: 'Billing questions, special arrangements, or general inquiries',
+    description: 'Invoicing, special requests, and general assistance from our team',
     defaultDepartment: 'reception',
     defaultPriority: 'medium',
-    slaMinutes: 45,
+    slaMinutes: 40,
     iconName: 'HelpCircle',
-    displayOrder: 7,
+    displayOrder: 8,
     isActive: true,
-    subcategories: [
-      { id: 'sub-billing', name: 'Invoicing & Folio Inquiries', description: 'Corporate invoice details, tax ID, payment query' },
-      { id: 'sub-celebration', name: 'Celebration & Special Arrangements', description: 'Birthday/anniversary flowers, wine, setup' },
-      { id: 'sub-accessibility', name: 'Accessibility & Special Care', description: 'Shower chair, ramp access, baby cot' },
-    ],
-    commonIssues: [
-      'Request itemized invoice / corporate tax receipt',
-      'Baby cot and baby bath requested',
-      'Arrange surprise wine / amenity for birthday',
-      'General inquiry about residence amenities',
-    ],
     createdAt: '2026-11-01T00:00:00Z',
   },
 ];
 
-const REQUESTS_STORAGE_KEY = 'guestcare_requests';
-const FEEDBACK_STORAGE_KEY = 'guestcare_feedback';
-const ACTIONS_STORAGE_KEY = 'guestcare_feedback_actions';
+// Exported alias for charts/reports
+export const CATEGORIES = BASE_CATEGORIES;
+
+const REQUESTS_STORAGE_KEY = 'guestcare_requests_v2';
+const FEEDBACK_STORAGE_KEY = 'guestcare_feedback_v2';
+const ACTIONS_STORAGE_KEY = 'guestcare_feedback_actions_v2';
 
 function loadStored<T>(key: string, defaultValue: T): T {
   try {
@@ -261,8 +154,8 @@ function loadStored<T>(key: string, defaultValue: T): T {
       const data = localStorage.getItem(key);
       if (data) return JSON.parse(data);
     }
-  } catch (e) {
-    // Ignore in tests
+  } catch {
+    // Ignore storage errors in test runner
   }
   return defaultValue;
 }
@@ -272,12 +165,11 @@ function saveStored<T>(key: string, value: T): void {
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem(key, JSON.stringify(value));
     }
-  } catch (e) {
-    // Ignore in tests
+  } catch {
+    // Ignore storage errors in test runner
   }
 }
 
-// Initial demonstration data for development/demo mode (clearly labeled)
 const INITIAL_DEMO_REQUESTS: GuestRequest[] = [
   {
     id: 'req-demo-101',
@@ -286,17 +178,13 @@ const INITIAL_DEMO_REQUESTS: GuestRequest[] = [
     apartmentRef: '402 - Penthouse Apartment 402',
     guestName: 'Sarah Jenkins',
     categoryId: 'cat-maint',
-    subcategoryId: 'sub-ac',
-    subcategoryName: 'Air Conditioning & Climate',
-    title: 'Master Bedroom AC blowing warm air',
-    description: 'The air conditioner in the master bedroom has been humming loudly and not cooling since 2 PM.',
+    title: 'Master bathroom hot water pressure low',
+    description: 'The shower water pressure feels weak and takes several minutes to warm up.',
     priority: 'high',
     status: 'in_progress',
     assignedDepartment: 'maintenance',
     assignedStaffId: 'staff-carlos',
     assignedStaffName: 'Carlos Gomez',
-    preferredTimeWindow: 'Anytime / Immediate',
-    roomAccessPermission: true,
     reopenCount: 0,
     createdAt: new Date(Date.now() - 90 * 60 * 1000).toISOString(),
     updatedAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
@@ -306,7 +194,7 @@ const INITIAL_DEMO_REQUESTS: GuestRequest[] = [
         requestId: 'req-demo-101',
         authorType: 'staff',
         authorName: 'Carlos Gomez',
-        content: 'I have arrived on site with replacement capacitor.',
+        content: 'I am checking the hot water pressure valve now.',
         isInternal: false,
         createdAt: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
       },
@@ -315,7 +203,7 @@ const INITIAL_DEMO_REQUESTS: GuestRequest[] = [
         requestId: 'req-demo-101',
         authorType: 'staff',
         authorName: 'Carlos Gomez',
-        content: 'Internal note: Replaced AC filter. Compressor pressure reading normal now.',
+        content: 'Internal note: Cleaned shower aerator and adjusted mixer valve pressure.',
         isInternal: true,
         createdAt: new Date(Date.now() - 25 * 60 * 1000).toISOString(),
       },
@@ -360,18 +248,14 @@ const INITIAL_DEMO_REQUESTS: GuestRequest[] = [
     apartmentRef: '105 - Deluxe Studio 105',
     guestName: 'David Zhao',
     categoryId: 'cat-hk',
-    subcategoryId: 'sub-towels',
-    subcategoryName: 'Towels & Linens',
-    title: 'Extra bath sheets and hypoallergenic pillows',
-    description: 'Could we please have 2 extra bath sheets and 2 firm pillows delivered when convenient?',
+    title: 'Extra bath towels and pillows',
+    description: 'Could we please have 2 extra bath towels and 2 pillows delivered?',
     priority: 'medium',
     status: 'new',
     assignedDepartment: 'housekeeping',
-    preferredTimeWindow: 'Within next 45 minutes',
-    roomAccessPermission: true,
     requestedItems: [
-      { name: 'Plush Bath Sheets', quantity: 2, unit: 'towels' },
-      { name: 'Hypoallergenic Pillow', quantity: 2, unit: 'pillows' },
+      { name: 'Bath Towels', quantity: 2, unit: 'towels' },
+      { name: 'Extra Pillow', quantity: 2, unit: 'pillows' },
     ],
     reopenCount: 0,
     createdAt: new Date(Date.now() - 20 * 60 * 1000).toISOString(),
@@ -395,8 +279,6 @@ const INITIAL_DEMO_REQUESTS: GuestRequest[] = [
     apartmentRef: '304 - Two Bedroom Residence 304',
     guestName: 'Elena Rostova',
     categoryId: 'cat-tech',
-    subcategoryId: 'sub-tv',
-    subcategoryName: 'Smart TV & Streaming',
     title: 'Living room Smart TV won’t connect to Wi-Fi',
     description: 'The TV displays "Network Error" when opening streaming apps.',
     priority: 'medium',
@@ -444,7 +326,7 @@ class RequestService {
       cleanlinessRating: 5,
       staffRating: 5,
       comfortRating: 4,
-      comments: 'Wonderful residence and super fast help with the television set.',
+      comments: 'Wonderful apartment and super fast help with the television set.',
       isAnonymous: false,
       status: 'reviewed',
       createdAt: new Date(Date.now() - 35 * 60 * 1000).toISOString(),
@@ -469,12 +351,27 @@ class RequestService {
     this.listeners.forEach(l => l());
   }
 
+  /**
+   * Returns active categories hydrated with live Staff-editable items and presets
+   */
   getCategories(): Category[] {
-    return CATEGORIES.filter(c => c.isActive).sort((a, b) => a.displayOrder - b.displayOrder);
+    return BASE_CATEGORIES.filter(c => c.isActive)
+      .sort((a, b) => a.displayOrder - b.displayOrder)
+      .map(cat => ({
+        ...cat,
+        presetItems: portalConfigService.getDeliverableItems(cat.code, true),
+        commonIssues: portalConfigService.getPresets(cat.code, true).map(p => p.label),
+      }));
   }
 
   getCategoryById(id: string): Category | undefined {
-    return CATEGORIES.find(c => c.id === id || c.code === id);
+    const base = BASE_CATEGORIES.find(c => c.id === id || c.code === id);
+    if (!base) return undefined;
+    return {
+      ...base,
+      presetItems: portalConfigService.getDeliverableItems(base.code, true),
+      commonIssues: portalConfigService.getPresets(base.code, true).map(p => p.label),
+    };
   }
 
   // --- Request Listing & Search ---
@@ -491,19 +388,15 @@ class RequestService {
     if (filters?.reservationRef) {
       result = result.filter(r => r.reservationRef.toLowerCase() === filters.reservationRef!.toLowerCase());
     }
-
     if (filters?.department) {
       result = result.filter(r => r.assignedDepartment === filters.department);
     }
-
     if (filters?.status) {
       result = result.filter(r => r.status === filters.status);
     }
-
     if (filters?.priority) {
       result = result.filter(r => r.priority === filters.priority);
     }
-
     if (filters?.search) {
       const q = filters.search.toLowerCase().trim();
       result = result.filter(
@@ -516,11 +409,12 @@ class RequestService {
       );
     }
 
-    // Attach category object for easy rendering
-    return result.map(r => ({
-      ...r,
-      category: this.getCategoryById(r.categoryId),
-    })).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return result
+      .map(r => ({
+        ...r,
+        category: this.getCategoryById(r.categoryId),
+      }))
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }
 
   getRequestById(id: string): GuestRequest | undefined {
@@ -555,7 +449,7 @@ class RequestService {
     }>;
   }): Promise<GuestRequest> {
     const cat = this.getCategoryById(input.categoryId);
-    const category = cat || CATEGORIES[0];
+    const category = cat || this.getCategories()[0];
 
     const todayStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     const ticketSeq = String(this.ticketCounter++).padStart(4, '0');
@@ -615,12 +509,11 @@ class RequestService {
     this.requests.unshift(newRequest);
     this.notify();
 
-    // Enqueue staff notification
     await notificationService.enqueue({
       recipientType: 'department',
       recipientId: department,
       channel: 'in_app',
-      title: `New ${category.name} Request`,
+      title: `New ${category.shortName || category.name} Request`,
       message: `${input.apartmentRef}: ${input.title}`,
       referenceType: 'request',
       referenceId: newReqId,
@@ -677,7 +570,6 @@ class RequestService {
 
     this.notify();
 
-    // If staff resolved, notify guest portal
     if (params.newStatus === 'resolved') {
       await notificationService.enqueue({
         recipientType: 'guest',
@@ -755,7 +647,6 @@ class RequestService {
 
     this.notify();
 
-    // Alert appropriate party
     if (params.authorType === 'guest') {
       await notificationService.enqueue({
         recipientType: 'department',
@@ -771,7 +662,7 @@ class RequestService {
     return comment;
   }
 
-  // --- Confirm Resolution (Guest Confirmation / Reopen Workflow) ---
+  // --- Confirm Resolution ---
 
   async confirmResolution(params: {
     requestId: string;

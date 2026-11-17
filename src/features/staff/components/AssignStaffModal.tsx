@@ -21,7 +21,7 @@ interface AssignStaffModalProps {
 const STAFF_MEMBERS: Record<Department, Array<{ id: string; name: string }>> = {
   maintenance: [
     { id: 'carlos-gomez', name: 'Carlos Gomez (Senior Technician)' },
-    { id: 'marcus-vance', name: 'Marcus Vance (HVAC & Electrician)' },
+    { id: 'marcus-vance', name: 'Marcus Vance (Electrical & Appliances)' },
     { id: 'andre-silva', name: 'Andre Silva (Plumber)' },
   ],
   housekeeping: [

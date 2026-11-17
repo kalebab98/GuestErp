@@ -5,9 +5,8 @@ export const MaintenancePage: React.FC = () => {
   return (
     <AllRequestsPage
       fixedDepartment="maintenance"
-      title="Maintenance & Engineering"
-      subtitle="HVAC, plumbing, electrical, appliances, and technical apartment tickets"
+      title="Maintenance & Repairs"
+      subtitle="Plumbing, hot water, electrical, appliances, locks, and general apartment repairs"
     />
   );
 };
-

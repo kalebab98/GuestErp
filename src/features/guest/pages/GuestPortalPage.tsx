@@ -2,9 +2,12 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { tokenService } from '@/lib/tokenService';
 import { requestService } from '@/features/requests/requestService';
-import { PortalSession, Category, GuestRequest } from '@/types/guestcare';
+import { portalConfigService } from '@/features/config/portalConfigService';
+import { PortalSession, Category, GuestRequest, FAQItem, LocalServiceProvider } from '@/types/guestcare';
 import { ServiceGrid } from '../components/ServiceGrid';
-import { PopularServicesRow, POPULAR_SERVICES, PopularServiceItem } from '../components/PopularServicesRow';
+import { PopularServicesRow, PopularServiceItem } from '../components/PopularServicesRow';
+import { LocalProvidersSection } from '../components/LocalProvidersSection';
+import { GuestFAQSection } from '../components/GuestFAQSection';
 import { SimpleServiceModal } from '../components/SimpleServiceModal';
 import { ConfirmResolutionModal } from '../components/ConfirmResolutionModal';
 import { PrivateFeedbackModal } from '../components/PrivateFeedbackModal';
@@ -18,13 +21,11 @@ import {
   CheckCircle2,
   Clock,
   ChevronDown,
-  Sparkles,
   AlertCircle,
   Copy,
   Check,
   ClipboardList,
   MessageSquareHeart,
-  ExternalLink,
 } from 'lucide-react';
 
 export const GuestPortalPage: React.FC = () => {
@@ -38,6 +39,9 @@ export const GuestPortalPage: React.FC = () => {
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [myRequests, setMyRequests] = useState<GuestRequest[]>([]);
+  const [faqs, setFaqs] = useState<FAQItem[]>([]);
+  const [providers, setProviders] = useState<LocalServiceProvider[]>([]);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [showAllCategories, setShowAllCategories] = useState(true);
 
@@ -65,7 +69,7 @@ export const GuestPortalPage: React.FC = () => {
           const generated = await tokenService.createPortalSession('RES-89211');
           activeToken = generated.rawToken;
           sessionStorage.setItem('guestcare_token', activeToken);
-        } catch (e: any) {
+        } catch {
           setAuthError('No active room pass found. Please scan the QR code located in your apartment.');
           setLoading(false);
           return;
@@ -85,21 +89,26 @@ export const GuestPortalPage: React.FC = () => {
     initSession();
   }, [tokenParam]);
 
-  // Load data & subscribe to real-time updates
+  // Load live data & subscribe to both requestService and staff portalConfigService
   useEffect(() => {
     if (!session) return;
 
     const loadData = () => {
       setCategories(requestService.getCategories());
       setMyRequests(requestService.listRequests({ reservationRef: session.reservationRef }));
+      setFaqs(portalConfigService.getFaqs(true));
+      setProviders(portalConfigService.getProviders(true));
     };
 
     loadData();
-    const unsubscribe = requestService.subscribe(loadData);
-    return () => unsubscribe();
+    const unsubReq = requestService.subscribe(loadData);
+    const unsubCfg = portalConfigService.subscribe(loadData);
+    return () => {
+      unsubReq();
+      unsubCfg();
+    };
   }, [session]);
 
-  // Filtered categories based on search
   const filteredCategories = useMemo(() => {
     if (!searchQuery.trim()) return categories;
     const q = searchQuery.toLowerCase().trim();
@@ -139,6 +148,12 @@ export const GuestPortalPage: React.FC = () => {
     const matchedCategory = categories.find(c => c.code === item.categoryCode) || categories[0];
     setSelectedCategory(matchedCategory);
     setInitialPreset(item.presetText);
+  };
+
+  const handleOrderViaDesk = (provider: LocalServiceProvider) => {
+    const shopCategory = categories.find(c => c.code === 'shop_delivery') || categories[0];
+    setSelectedCategory(shopCategory);
+    setInitialPreset(`Order from ${provider.name} (${provider.category})`);
   };
 
   const handleConfirmResolution = async (satisfied: boolean, notesOrReason?: string) => {
@@ -219,14 +234,14 @@ export const GuestPortalPage: React.FC = () => {
       {/* Top Navigation Bar: Responsive (Mobile + Tablet + PC) */}
       <header className="sticky top-0 z-30 border-b border-slate-100 bg-white/95 backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 sm:px-6 py-3">
-          {/* Location / Apartment Unit Selector (as shown in reference image) */}
+          {/* Apartment Unit Selector */}
           <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#F0F7F5] text-[#11574A]">
               <MapPin className="h-4 w-4" />
             </div>
             <div className="text-left">
               <span className="block text-[10px] font-medium text-slate-400 leading-none">
-                Your Residence
+                Your Apartment
               </span>
               <button
                 type="button"
@@ -239,7 +254,7 @@ export const GuestPortalPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Desktop Navigation Links (Tablet & PC) */}
+          {/* Desktop / Tablet Navigation Links */}
           <div className="hidden md:flex items-center gap-6 text-xs font-semibold text-slate-600">
             <button
               onClick={() => setWifiModalOpen(true)}
@@ -271,12 +286,12 @@ export const GuestPortalPage: React.FC = () => {
             </button>
           </div>
 
-          {/* User Profile Pill & Quick Call */}
+          {/* User Profile & Call */}
           <div className="flex items-center gap-2 sm:gap-3">
             <a
               href="tel:+15550192834"
               className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-[#F0F7F5] text-[#11574A] hover:bg-[#E2F0EC] transition-colors"
-              title="Call Reception"
+              title="Call Front Desk"
             >
               <Phone className="h-3.5 w-3.5" />
             </a>
@@ -297,14 +312,14 @@ export const GuestPortalPage: React.FC = () => {
         </div>
       </header>
 
-      {/* Main Content Area (Max width max-w-6xl for PC/Tablet, px-4 for Mobile) */}
+      {/* Main Content Area (Responsive: Mobile -> Tablet -> PC max-w-6xl) */}
       <main className="mx-auto max-w-6xl px-4 sm:px-6 pt-5 sm:pt-7 space-y-6 sm:space-y-8 text-left">
-        {/* Search Bar (directly matching the reference layout) */}
+        {/* Search Bar */}
         <div className="relative">
           <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
           <input
             type="text"
-            placeholder="Search for a service or request (e.g. towels, AC, wifi)..."
+            placeholder="Search for a service or item (e.g. towels, laundry, coffee, wifi)..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             className="w-full rounded-2xl bg-[#F6F8F8] pl-10 pr-4 py-2.5 sm:py-3 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 border border-transparent focus:border-[#11574A]/40 focus:bg-white focus:outline-none transition-all"
@@ -319,9 +334,8 @@ export const GuestPortalPage: React.FC = () => {
           )}
         </div>
 
-        {/* Hero Card: Deep Green Banner inspired by the AFTER reference image */}
+        {/* Hero Card */}
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0F4F43] via-[#11574A] to-[#156758] p-5 sm:p-7 md:p-8 text-white shadow-lg">
-          {/* Subtle background graphics */}
           <div className="absolute -top-12 -right-12 h-44 w-44 rounded-full bg-white/5 pointer-events-none" />
           <div className="absolute -bottom-16 -left-16 h-48 w-48 rounded-full bg-black/10 pointer-events-none" />
 
@@ -335,7 +349,7 @@ export const GuestPortalPage: React.FC = () => {
                 ONE TAP AWAY!
               </h1>
               <p className="text-xs sm:text-sm text-teal-100/90 leading-relaxed font-light">
-                Request housekeeping, maintenance, extra supplies, or room comfort anytime. No waiting on hold.
+                Request housekeeping, laundry, maintenance, or order coffee, food, and everyday essentials right to your door.
               </p>
             </div>
 
@@ -362,7 +376,7 @@ export const GuestPortalPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Action Banner: Guest Confirmation Pending (Two-Way Resolution) */}
+        {/* Action Banner: Guest Confirmation Pending */}
         {resolvedPendingConfirmation.length > 0 && (
           <div className="rounded-2xl border border-emerald-300 bg-emerald-50/90 p-4 sm:p-5 text-left shadow-xs space-y-2.5 animate-fadeIn">
             <div className="flex items-center justify-between">
@@ -388,7 +402,7 @@ export const GuestPortalPage: React.FC = () => {
           </div>
         )}
 
-        {/* Active In-Progress Banner (if any) */}
+        {/* Active In-Progress Banner */}
         {activeRequests.length > 0 && resolvedPendingConfirmation.length === 0 && (
           <div
             onClick={() => navigate('/portal/requests')}
@@ -413,7 +427,7 @@ export const GuestPortalPage: React.FC = () => {
           </div>
         )}
 
-        {/* Section 1: Service Categories (Clean 2-4 Col Grid matching reference) */}
+        {/* Section 1: Service Categories */}
         <div id="service-categories-section">
           <ServiceGrid
             categories={filteredCategories}
@@ -426,16 +440,23 @@ export const GuestPortalPage: React.FC = () => {
           />
         </div>
 
-        {/* Section 2: Popular Services (Visual Cards matching reference layout) */}
+        {/* Section 2: Popular Requests */}
+        {!searchQuery && <PopularServicesRow onSelectPopular={handleSelectPopular} />}
+
+        {/* Section 3: Local Shops & Delivery (Cards, Cigarettes, Coffee, Tea, Food — Staff Editable) */}
         {!searchQuery && (
-          <PopularServicesRow
-            onSelectPopular={handleSelectPopular}
+          <LocalProvidersSection
+            providers={providers}
+            apartmentRef={session.apartmentRef}
+            onOrderViaDesk={handleOrderViaDesk}
           />
         )}
 
-        {/* Section 3: Clean Contact & Private Feedback Card */}
+        {/* Section 4: Frequently Asked Questions (Staff Editable) */}
+        {!searchQuery && <GuestFAQSection faqs={faqs} />}
+
+        {/* Section 5: Feedback & 24/7 Front Desk */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-          {/* Private Feedback Card */}
           <div className="flex items-center justify-between rounded-2xl border border-slate-200/70 bg-white p-4 shadow-2xs">
             <div className="space-y-0.5 pr-2">
               <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-rose-500">
@@ -454,7 +475,6 @@ export const GuestPortalPage: React.FC = () => {
             </Button>
           </div>
 
-          {/* 24/7 Front Desk Call Card */}
           <div className="flex items-center justify-between rounded-2xl border border-slate-200/70 bg-white p-4 shadow-2xs">
             <div className="space-y-0.5 pr-2">
               <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#11574A]">
@@ -474,7 +494,7 @@ export const GuestPortalPage: React.FC = () => {
         </div>
       </main>
 
-      {/* Simplified, Fast Service Request Modal */}
+      {/* Fast Service Request Modal (with General Issue Box + Staff-Editable Deliverable Items) */}
       <SimpleServiceModal
         isOpen={Boolean(selectedCategory)}
         onClose={() => {
@@ -483,6 +503,7 @@ export const GuestPortalPage: React.FC = () => {
         }}
         category={selectedCategory}
         initialPreset={initialPreset}
+        apartmentRef={session.apartmentRef}
         onSubmit={handleCreateRequest}
       />
 
@@ -494,7 +515,7 @@ export const GuestPortalPage: React.FC = () => {
         onConfirm={handleConfirmResolution}
       />
 
-      {/* Private In-Stay Feedback Modal */}
+      {/* Private Feedback Modal */}
       <PrivateFeedbackModal
         isOpen={feedbackOpen}
         onClose={() => setFeedbackOpen(false)}
@@ -559,7 +580,7 @@ export const GuestPortalPage: React.FC = () => {
         </div>
       )}
 
-      {/* Mobile Sticky Bottom Navigation (only visible on mobile screens) */}
+      {/* Mobile Sticky Bottom Navigation */}
       <GuestBottomNav
         activeTab="home"
         activeRequestCount={activeRequests.length}

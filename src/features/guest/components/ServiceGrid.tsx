@@ -3,10 +3,11 @@ import { Category } from '@/types/guestcare';
 import {
   Wrench,
   Sparkles,
+  Shirt,
+  ShoppingBag,
   BedDouble,
   Wifi,
   Bell,
-  VolumeX,
   HelpCircle,
   LucideIcon,
   ChevronRight,
@@ -22,10 +23,11 @@ interface ServiceGridProps {
 const iconMap: Record<string, LucideIcon> = {
   Wrench,
   Sparkles,
+  Shirt,
+  ShoppingBag,
   BedDouble,
   Wifi,
   Bell,
-  VolumeX,
   HelpCircle,
 };
 
@@ -39,7 +41,6 @@ export const ServiceGrid: React.FC<ServiceGridProps> = ({
 
   return (
     <section className="space-y-4 text-left">
-      {/* Clean Section Header (inspired by AFTER layout) */}
       <div className="flex items-center justify-between">
         <h2 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
           Service Categories
