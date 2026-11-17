@@ -17,6 +17,12 @@ import {
 import { notificationService } from '@/features/notifications/notificationService';
 import { GuestHealthEngine } from '@/features/health/healthEngine';
 import { portalConfigService } from '@/features/config/portalConfigService';
+import {
+  insertRequestToSupabase,
+  updateRequestInSupabase,
+  insertCommentToSupabase,
+  insertFeedbackToSupabase,
+} from '@/lib/supabaseSync';
 
 export const BASE_CATEGORIES: Category[] = [
   {
@@ -508,6 +514,7 @@ class RequestService {
 
     this.requests.unshift(newRequest);
     this.notify();
+    void insertRequestToSupabase(newRequest, category.code);
 
     await notificationService.enqueue({
       recipientType: 'department',
@@ -569,6 +576,7 @@ class RequestService {
     req.statusHistory.push(historyEntry);
 
     this.notify();
+    void updateRequestInSupabase(req);
 
     if (params.newStatus === 'resolved') {
       await notificationService.enqueue({
@@ -646,6 +654,7 @@ class RequestService {
     req.updatedAt = new Date().toISOString();
 
     this.notify();
+    void insertCommentToSupabase(comment);
 
     if (params.authorType === 'guest') {
       await notificationService.enqueue({
@@ -744,6 +753,7 @@ class RequestService {
 
     this.feedback.unshift(fb);
     this.notify();
+    void insertFeedbackToSupabase(fb);
 
     if (input.overallRating <= 2) {
       await notificationService.enqueue({

@@ -4,6 +4,7 @@
 // is 100% editable from the Staff Command Center.
 
 import { CategoryCode, FAQItem, LocalServiceProvider, PresetServiceItem } from '@/types/guestcare';
+import { fetchAllSettingsFromSupabase, upsertSettingToSupabase } from '@/lib/supabaseSync';
 
 const STORAGE_KEYS = {
   FAQS: 'guestcare_config_faqs_v3',
@@ -267,6 +268,49 @@ class PortalConfigService {
   private contact: ContactAndBuildingConfig = load(STORAGE_KEYS.CONTACT, DEFAULT_CONTACT);
   private listeners: Array<() => void> = [];
 
+  constructor() {
+    this.syncFromSupabase();
+  }
+
+  async syncFromSupabase(): Promise<void> {
+    const remote = await fetchAllSettingsFromSupabase();
+    if (!remote) return;
+    let changed = false;
+    if (Array.isArray(remote.portal_faqs)) {
+      this.faqs = remote.portal_faqs;
+      changed = true;
+    }
+    if (Array.isArray(remote.portal_deliverable_items)) {
+      this.items = remote.portal_deliverable_items;
+      changed = true;
+    }
+    if (Array.isArray(remote.portal_presets)) {
+      this.presets = remote.portal_presets;
+      changed = true;
+    }
+    if (Array.isArray(remote.portal_providers)) {
+      this.providers = remote.portal_providers;
+      changed = true;
+    }
+    if (remote.wifi_config && typeof remote.wifi_config === 'object') {
+      this.wifi = { ...this.wifi, ...remote.wifi_config };
+      changed = true;
+    }
+    if (remote.contact_info && typeof remote.contact_info === 'object') {
+      this.contact = { ...this.contact, ...remote.contact_info };
+      changed = true;
+    }
+    if (changed) {
+      save(STORAGE_KEYS.FAQS, this.faqs);
+      save(STORAGE_KEYS.ITEMS, this.items);
+      save(STORAGE_KEYS.PRESETS, this.presets);
+      save(STORAGE_KEYS.PROVIDERS, this.providers);
+      save(STORAGE_KEYS.WIFI, this.wifi);
+      save(STORAGE_KEYS.CONTACT, this.contact);
+      this.listeners.forEach(l => l());
+    }
+  }
+
   subscribe(listener: () => void): () => void {
     this.listeners.push(listener);
     return () => {
@@ -281,6 +325,15 @@ class PortalConfigService {
     save(STORAGE_KEYS.PROVIDERS, this.providers);
     save(STORAGE_KEYS.WIFI, this.wifi);
     save(STORAGE_KEYS.CONTACT, this.contact);
+
+    // Sync asynchronously to live Supabase `guestcare.settings`
+    void upsertSettingToSupabase('portal_faqs', this.faqs, 'Guest portal FAQs');
+    void upsertSettingToSupabase('portal_deliverable_items', this.items, 'Guest portal deliverable items');
+    void upsertSettingToSupabase('portal_presets', this.presets, 'Guest portal quick presets');
+    void upsertSettingToSupabase('portal_providers', this.providers, 'Local directory & Ethiopia ride numbers');
+    void upsertSettingToSupabase('wifi_config', this.wifi, 'Apartment Wi-Fi credentials');
+    void upsertSettingToSupabase('contact_info', this.contact, 'Building contact numbers & medical store info');
+
     this.listeners.forEach(l => l());
   }
 

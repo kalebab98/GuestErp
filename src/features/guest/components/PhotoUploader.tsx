@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
-import { Camera, Image as ImageIcon, X } from 'lucide-react';
+import { Camera, X } from 'lucide-react';
+import { uploadAttachmentToSupabase } from '@/lib/supabaseSync';
 
 export interface UploadedFile {
   fileName: string;
@@ -22,34 +23,33 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files;
     if (!selected) return;
 
     const newFiles: UploadedFile[] = [...files];
 
-    Array.from(selected).forEach(file => {
-      if (newFiles.length >= maxFiles) return;
+    for (const file of Array.from(selected)) {
+      if (newFiles.length >= maxFiles) break;
 
-      // Check max size (5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        alert(`File ${file.name} exceeds 5MB size limit.`);
-        return;
+      if (file.size > 10 * 1024 * 1024) {
+        alert(`File ${file.name} exceeds 10MB size limit.`);
+        continue;
       }
 
       const previewUrl = URL.createObjectURL(file);
+      const uploadedPath = await uploadAttachmentToSupabase(file, 'requests');
       newFiles.push({
         fileName: file.name,
-        filePath: `uploads/${Date.now()}-${file.name.replace(/\s+/g, '_')}`,
+        filePath: uploadedPath || `uploads/${Date.now()}-${file.name.replace(/\s+/g, '_')}`,
         fileSize: file.size,
         mimeType: file.type || 'image/jpeg',
         previewUrl,
       });
-    });
+    }
 
     onFilesChange(newFiles);
 
-    // Reset input
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
