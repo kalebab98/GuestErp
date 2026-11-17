@@ -43,40 +43,51 @@ export const ApartmentQRCodesPage: React.FC = () => {
     });
   }, []);
 
-  const buildQRForApartment = useCallback(async (apt: PMSApartment): Promise<ApartmentQRState> => {
-    const res = await mockPMSAdapter.getReservationByApartmentUnit(apt.unitNumber);
-    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
+  const buildQRForApartment = useCallback(
+    async (apt: PMSApartment, forceRotate = false): Promise<ApartmentQRState> => {
+      const res = await mockPMSAdapter.getReservationByApartmentUnit(apt.unitNumber);
+      const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
 
-    if (res && res.stayStatus === 'checked_in') {
-      try {
-        const generated = await tokenService.createPortalSession(res.id);
-        const qrDataUrl = await generateQRCodeDataUrl(generated.portalUrl);
-        return {
-          apartment: apt,
-          reservationId: res.id,
-          guestLabel: res.primaryGuest.fullName,
-          stayStatus: 'Active Stay',
-          portalUrl: generated.portalUrl,
-          qrDataUrl,
-          loading: false,
-        };
-      } catch {
-        // Fallback below
+      if (res && res.stayStatus === 'checked_in') {
+        try {
+          const generated = await tokenService.getOrCreateUnitSession(
+            apt.unitNumber,
+            res.id,
+            forceRotate
+          );
+          const fullPortalUrl = `${baseUrl}/portal?token=${generated.rawToken}&unit=${apt.unitNumber}`;
+          const qrDataUrl = await generateQRCodeDataUrl(fullPortalUrl);
+          return {
+            apartment: apt,
+            reservationId: res.id,
+            guestLabel: res.primaryGuest.fullName,
+            stayStatus: 'Active Stay',
+            portalUrl: fullPortalUrl,
+            qrDataUrl,
+            loading: false,
+          };
+        } catch {
+          // Fallback below
+        }
       }
-    }
 
-    const fallbackUrl = `${baseUrl}/portal?unit=${apt.unitNumber}`;
-    const qrDataUrl = await generateQRCodeDataUrl(fallbackUrl);
-    return {
-      apartment: apt,
-      reservationId: res?.id || `UNIT-${apt.unitNumber}`,
-      guestLabel: res?.stayStatus === 'booked' ? `Arriving: ${res.primaryGuest.fullName}` : 'Ready for Check-in',
-      stayStatus: res?.stayStatus === 'booked' ? 'Upcoming' : 'Vacant',
-      portalUrl: fallbackUrl,
-      qrDataUrl,
-      loading: false,
-    };
-  }, []);
+      const fallbackUrl = `${baseUrl}/portal?unit=${apt.unitNumber}`;
+      const qrDataUrl = await generateQRCodeDataUrl(fallbackUrl);
+      return {
+        apartment: apt,
+        reservationId: res?.id || `UNIT-${apt.unitNumber}`,
+        guestLabel:
+          res?.stayStatus === 'booked'
+            ? `Arriving: ${res.primaryGuest.fullName}`
+            : 'Ready for Check-in',
+        stayStatus: res?.stayStatus === 'booked' ? 'Upcoming' : 'Vacant',
+        portalUrl: fallbackUrl,
+        qrDataUrl,
+        loading: false,
+      };
+    },
+    []
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -106,7 +117,7 @@ export const ApartmentQRCodesPage: React.FC = () => {
       await tokenService.revokeAllForReservation(existing.reservationId, 'Manual QR rotation by staff');
     }
 
-    const refreshed = await buildQRForApartment(apt);
+    const refreshed = await buildQRForApartment(apt, true);
     setCards(prev =>
       prev.map(c => (c.apartment.unitNumber === unitNumber ? refreshed : c))
     );

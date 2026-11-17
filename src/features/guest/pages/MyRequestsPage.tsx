@@ -32,25 +32,42 @@ export const MyRequestsPage: React.FC = () => {
   const [confirmModalRequest, setConfirmModalRequest] = useState<GuestRequest | null>(null);
 
   useEffect(() => {
+    let activeReservationRef: string | null = null;
+
     async function load() {
       const activeToken = sessionStorage.getItem('guestcare_token');
-      if (!activeToken) {
-        navigate('/portal');
-        return;
+      if (activeToken) {
+        const res = await tokenService.validateToken(activeToken);
+        if (res.valid && res.session) {
+          activeReservationRef = res.session.reservationRef;
+          setSession(res.session);
+          setRequests(requestService.listRequests({ reservationRef: res.session.reservationRef }));
+          return;
+        }
       }
-      const res = await tokenService.validateToken(activeToken);
-      if (res.valid && res.session) {
-        setSession(res.session);
-        setRequests(requestService.listRequests({ reservationRef: res.session.reservationRef }));
-      } else {
-        navigate('/portal');
+
+      // Support unit-based QR sessions (e.g., ?unit=2B) stored by GuestPortalPage
+      const cachedSessionRaw = sessionStorage.getItem('guestcare_active_session');
+      if (cachedSessionRaw) {
+        try {
+          const parsed = JSON.parse(cachedSessionRaw) as PortalSession;
+          activeReservationRef = parsed.reservationRef;
+          setSession(parsed);
+          setRequests(requestService.listRequests({ reservationRef: parsed.reservationRef }));
+          return;
+        } catch {
+          sessionStorage.removeItem('guestcare_active_session');
+        }
       }
+
+      navigate('/portal');
     }
     load();
 
     const unsubscribe = requestService.subscribe(() => {
-      if (session) {
-        setRequests(requestService.listRequests({ reservationRef: session.reservationRef }));
+      const ref = activeReservationRef || session?.reservationRef;
+      if (ref) {
+        setRequests(requestService.listRequests({ reservationRef: ref }));
       }
     });
     return () => unsubscribe();

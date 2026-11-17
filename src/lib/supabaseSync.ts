@@ -2,7 +2,7 @@
 // Syncs settings, requests, comments, feedback, and photo uploads with schema `guestcare`
 
 import { supabase, isSupabaseConfigured } from './supabase';
-import { GuestRequest, RequestComment, GuestFeedback } from '@/types/guestcare';
+import { GuestRequest, RequestComment, GuestFeedback, PortalSession } from '@/types/guestcare';
 
 const isTestEnv = typeof import.meta !== 'undefined' && (import.meta as any).env?.MODE === 'test';
 
@@ -305,3 +305,103 @@ export function subscribeToGuestCareRealtime(onUpdate: () => void): () => void {
   }
 }
 
+
+// --- Portal Sessions (Cross-Device QR Code Auth Persistence) ---
+
+export async function insertPortalSessionToSupabase(session: PortalSession): Promise<void> {
+  if (!canUseLiveSupabase()) return;
+  try {
+    await supabase.from('portal_sessions').insert({
+      id: session.id,
+      reservation_ref: session.reservationRef,
+      apartment_ref: session.apartmentRef,
+      guest_name: session.guestName,
+      guest_email: session.guestEmail || null,
+      guest_phone: session.guestPhone || null,
+      token_hash: session.tokenHash,
+      check_in_date: session.checkInDate,
+      check_out_date: session.checkOutDate,
+      expires_at: session.expiresAt,
+      last_active_at: session.lastActiveAt,
+      created_at: session.createdAt,
+    });
+  } catch {
+    // Graceful fallback
+  }
+}
+
+export async function findPortalSessionByHashInSupabase(tokenHash: string): Promise<PortalSession | null> {
+  if (!canUseLiveSupabase()) return null;
+  try {
+    const { data, error } = await supabase
+      .from('portal_sessions')
+      .select('*')
+      .eq('token_hash', tokenHash)
+      .limit(1)
+      .maybeSingle();
+
+    if (error || !data) return null;
+
+    return {
+      id: data.id,
+      reservationRef: data.reservation_ref,
+      apartmentRef: data.apartment_ref,
+      guestName: data.guest_name,
+      guestEmail: data.guest_email || undefined,
+      guestPhone: data.guest_phone || undefined,
+      tokenHash: data.token_hash,
+      checkInDate: data.check_in_date,
+      checkOutDate: data.check_out_date,
+      expiresAt: data.expires_at,
+      revokedAt: data.revoked_at || undefined,
+      revocationReason: data.revocation_reason || undefined,
+      lastActiveAt: data.last_active_at,
+      createdAt: data.created_at,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function updatePortalSessionLastActiveInSupabase(sessionId: string): Promise<void> {
+  if (!canUseLiveSupabase()) return;
+  try {
+    await supabase
+      .from('portal_sessions')
+      .update({ last_active_at: new Date().toISOString() })
+      .eq('id', sessionId);
+  } catch {
+    // Ignore
+  }
+}
+
+export async function revokePortalSessionInSupabase(sessionId: string, reason: string): Promise<void> {
+  if (!canUseLiveSupabase()) return;
+  try {
+    await supabase
+      .from('portal_sessions')
+      .update({
+        revoked_at: new Date().toISOString(),
+        revocation_reason: reason,
+      })
+      .eq('id', sessionId);
+  } catch {
+    // Ignore
+  }
+}
+
+export async function revokeReservationSessionsInSupabase(reservationRef: string, reason: string): Promise<void> {
+  if (!canUseLiveSupabase()) return;
+  try {
+    await supabase
+      .from('portal_sessions')
+      .update({
+        revoked_at: new Date().toISOString(),
+        revocation_reason: reason,
+      })
+      .eq('reservation_ref', reservationRef)
+      .is('revoked_at', null);
+  } catch {
+    // Ignore
+  }
+}

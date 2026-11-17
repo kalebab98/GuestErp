@@ -1,10 +1,17 @@
 // Token Service & Session Management
-// Cryptographic token validation, hashing, expiration, and revocation logic
+// Cryptographic token validation, SHA-256 hashing, cross-device Supabase sync, expiration, and revocation
 
 import { generateSecureToken, hashToken } from './crypto';
 import { pmsService } from '@/features/pms/pmsService';
 import { rateLimiter } from './rateLimit';
 import { PortalSession } from '@/types/guestcare';
+import {
+  insertPortalSessionToSupabase,
+  findPortalSessionByHashInSupabase,
+  updatePortalSessionLastActiveInSupabase,
+  revokePortalSessionInSupabase,
+  revokeReservationSessionsInSupabase,
+} from './supabaseSync';
 
 export interface TokenValidationResult {
   valid: boolean;
@@ -19,8 +26,8 @@ export interface GeneratedTokenResult {
   session: PortalSession;
 }
 
-// In-memory / persistent mock session store for robust local development & testing
 const STORAGE_KEY = 'guestcare_portal_sessions';
+const UNIT_TOKENS_KEY = 'guestcare_unit_qr_tokens_v1';
 
 function loadStoredSessions(): PortalSession[] {
   try {
@@ -28,8 +35,8 @@ function loadStoredSessions(): PortalSession[] {
       const data = localStorage.getItem(STORAGE_KEY);
       if (data) return JSON.parse(data);
     }
-  } catch (e) {
-    // Ignore storage errors in test runner
+  } catch {
+    // Ignore in test runner
   }
   return [];
 }
@@ -39,8 +46,30 @@ function saveStoredSessions(sessions: PortalSession[]): void {
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
     }
-  } catch (e) {
-    // Ignore storage errors in test runner
+  } catch {
+    // Ignore in test runner
+  }
+}
+
+function loadUnitTokenMap(): Record<string, GeneratedTokenResult> {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      const data = localStorage.getItem(UNIT_TOKENS_KEY);
+      if (data) return JSON.parse(data);
+    }
+  } catch {
+    // Ignore
+  }
+  return {};
+}
+
+function saveUnitTokenMap(map: Record<string, GeneratedTokenResult>): void {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(UNIT_TOKENS_KEY, JSON.stringify(map));
+    }
+  } catch {
+    // Ignore
   }
 }
 
@@ -49,6 +78,7 @@ class TokenService {
 
   /**
    * Generates a new cryptographic portal token for an eligible PMS reservation
+   * and persists the SHA-256 hash to Supabase `guestcare.portal_sessions` for cross-device scanning.
    */
   async createPortalSession(reservationId: string, gracePeriodHours = 2): Promise<GeneratedTokenResult> {
     const pms = pmsService.getAdapter();
@@ -81,13 +111,13 @@ class TokenService {
       createdAt: new Date().toISOString(),
     };
 
-    // Store in session repository
+    // Persist locally AND to live Supabase database so ANY mobile device can scan the QR
     this.inMemorySessions.push(newSession);
     saveStoredSessions(this.inMemorySessions);
+    await insertPortalSessionToSupabase(newSession);
 
-    // Build user-facing portal URL without exposing any guest PII
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
-    const portalUrl = `${baseUrl}/portal?token=${rawToken}`;
+    const portalUrl = `${baseUrl}/portal?token=${rawToken}&unit=${encodeURIComponent(res.apartment.unitNumber)}`;
 
     return {
       rawToken,
@@ -98,20 +128,49 @@ class TokenService {
   }
 
   /**
-   * Validates a raw token from the QR code:
-   * 1. Rate-limit validation attempts
-   * 2. Hash computation
-   * 3. Database lookup by token_hash
-   * 4. Revocation verification
-   * 5. Expiration check
-   * 6. PMS stay eligibility check
+   * Returns a stable reusable QR session for a unit so printed QR codes remain valid across reloads,
+   * unless forceRotate is true (when staff clicks Reset).
+   */
+  async getOrCreateUnitSession(
+    unitNumber: string,
+    reservationId: string,
+    forceRotate = false
+  ): Promise<GeneratedTokenResult> {
+    const map = loadUnitTokenMap();
+    const existing = map[unitNumber];
+    const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
+
+    if (
+      !forceRotate &&
+      existing &&
+      existing.session.reservationRef === reservationId &&
+      !existing.session.revokedAt &&
+      new Date(existing.session.expiresAt) > new Date()
+    ) {
+      // Ensure portalUrl reflects current origin (e.g. https://guest-erp.vercel.app) and unit code
+      const syncedUrl = `${baseUrl}/portal?token=${existing.rawToken}&unit=${encodeURIComponent(unitNumber)}`;
+      // Ensure session exists in Supabase as well
+      const inDb = await findPortalSessionByHashInSupabase(existing.tokenHash);
+      if (!inDb) {
+        await insertPortalSessionToSupabase(existing.session);
+      }
+      return { ...existing, portalUrl: syncedUrl };
+    }
+
+    const created = await this.createPortalSession(reservationId);
+    map[unitNumber] = created;
+    saveUnitTokenMap(map);
+    return created;
+  }
+
+  /**
+   * Validates a raw token from the QR code across both local cache and live Supabase:
    */
   async validateToken(rawToken: string, clientIp = 'client'): Promise<TokenValidationResult> {
     if (!rawToken || rawToken.trim().length < 32) {
       return { valid: false, error: 'Invalid or missing QR access token.' };
     }
 
-    // Rate limiting: 10 attempts per minute per client
     const allowed = rateLimiter.isAllowed(`auth:${clientIp}`, 10, 60 * 1000);
     if (!allowed) {
       const waitSec = rateLimiter.getResetSeconds(`auth:${clientIp}`, 60 * 1000);
@@ -122,7 +181,18 @@ class TokenService {
     }
 
     const calculatedHash = await hashToken(rawToken.trim());
-    const session = this.inMemorySessions.find(s => s.tokenHash === calculatedHash);
+
+    // 1. Check local cache first, 2. Fall back to live Supabase (for cross-device mobile QR scans!)
+    let session: PortalSession | null | undefined = this.inMemorySessions.find(
+      s => s.tokenHash === calculatedHash
+    );
+    if (!session) {
+      session = await findPortalSessionByHashInSupabase(calculatedHash);
+      if (session) {
+        this.inMemorySessions.push(session);
+        saveStoredSessions(this.inMemorySessions);
+      }
+    }
 
     if (!session) {
       return { valid: false, error: 'Access token not recognized or already expired.' };
@@ -154,9 +224,9 @@ class TokenService {
       };
     }
 
-    // Update last active
     session.lastActiveAt = now.toISOString();
     saveStoredSessions(this.inMemorySessions);
+    void updatePortalSessionLastActiveInSupabase(session.id);
 
     return {
       valid: true,
@@ -165,7 +235,7 @@ class TokenService {
   }
 
   /**
-   * Manually revokes a session (e.g. staff intervention or room move)
+   * Manually revokes a session
    */
   async revokeSession(sessionId: string, reason: string): Promise<boolean> {
     const session = this.inMemorySessions.find(s => s.id === sessionId);
@@ -174,11 +244,12 @@ class TokenService {
     session.revokedAt = new Date().toISOString();
     session.revocationReason = reason;
     saveStoredSessions(this.inMemorySessions);
+    await revokePortalSessionInSupabase(sessionId, reason);
     return true;
   }
 
   /**
-   * Revoke all sessions for a reservation (e.g. on early checkout)
+   * Revoke all sessions for a reservation
    */
   async revokeAllForReservation(reservationRef: string, reason: string): Promise<number> {
     let count = 0;
@@ -193,16 +264,23 @@ class TokenService {
     if (count > 0) {
       saveStoredSessions(this.inMemorySessions);
     }
+
+    // Also clear unit QR cache for this reservation
+    const map = loadUnitTokenMap();
+    Object.keys(map).forEach(unit => {
+      if (map[unit]?.session?.reservationRef === reservationRef) {
+        delete map[unit];
+      }
+    });
+    saveUnitTokenMap(map);
+
+    await revokeReservationSessionsInSupabase(reservationRef, reason);
     return count;
   }
 
-  /**
-   * List all sessions (for Staff Dashboard QR & Session Management)
-   */
   async listSessions(): Promise<PortalSession[]> {
     return [...this.inMemorySessions];
   }
 }
 
 export const tokenService = new TokenService();
-

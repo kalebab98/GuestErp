@@ -70,5 +70,18 @@ describe('Token Service & Authentication', () => {
       /already completed checkout/i
     );
   });
+
+  it('reuses a stable unit QR token until forceRotate is requested and encodes unit code in URL', async () => {
+    const first = await tokenService.getOrCreateUnitSession('1A', 'RES-89211', false);
+    const second = await tokenService.getOrCreateUnitSession('1A', 'RES-89211', false);
+
+    expect(first.portalUrl).toContain('token=');
+    expect(first.portalUrl).toContain('unit=1A');
+    expect(second.rawToken).toBe(first.rawToken);
+
+    const rotated = await tokenService.getOrCreateUnitSession('1A', 'RES-89211', true);
+    expect(rotated.rawToken).not.toBe(first.rawToken);
+    expect(rotated.portalUrl).toContain('unit=1A');
+  });
 });
 

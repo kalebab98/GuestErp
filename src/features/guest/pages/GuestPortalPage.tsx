@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { tokenService } from '@/lib/tokenService';
 import { requestService } from '@/features/requests/requestService';
 import { portalConfigService, WifiConfig, ContactAndBuildingConfig } from '@/features/config/portalConfigService';
+import { BUILDING_16_APARTMENTS, mockPMSAdapter } from '@/features/pms/mockAdapter';
 import { PortalSession, Category, GuestRequest, FAQItem, LocalServiceProvider } from '@/types/guestcare';
 import { ServiceGrid } from '../components/ServiceGrid';
 import { PopularServicesRow, PopularServiceItem } from '../components/PopularServicesRow';
@@ -31,6 +32,7 @@ export const GuestPortalPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const tokenParam = searchParams.get('token');
+  const unitParam = searchParams.get('unit');
 
   const [session, setSession] = useState<PortalSession | null>(null);
   const [loading, setLoading] = useState(true);
@@ -53,41 +55,117 @@ export const GuestPortalPage: React.FC = () => {
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [wifiCopied, setWifiCopied] = useState(false);
 
-  // Validate token on mount
+  // Resolve apartment session cleanly from QR token (cross-device via Supabase) or unit code (1A-8B)
   useEffect(() => {
     async function initSession() {
       setLoading(true);
       setAuthError(null);
 
-      let activeToken = tokenParam;
-      if (!activeToken) {
-        activeToken = sessionStorage.getItem('guestcare_token');
+      // Helper to resolve a session directly for a building apartment unit (1A - 8B)
+      const resolveByUnit = async (unitCode: string): Promise<boolean> => {
+        const normalized = unitCode.trim().toUpperCase();
+        const apt = BUILDING_16_APARTMENTS.find(a => a.unitNumber.toUpperCase() === normalized);
+        if (!apt) return false;
+
+        const res = await mockPMSAdapter.getReservationByApartmentUnit(apt.unitNumber);
+        if (res && res.stayStatus === 'checked_in') {
+          try {
+            const generated = await tokenService.getOrCreateUnitSession(apt.unitNumber, res.id);
+            setSession(generated.session);
+            sessionStorage.setItem('guestcare_token', generated.rawToken);
+            sessionStorage.setItem('guestcare_active_session', JSON.stringify(generated.session));
+            return true;
+          } catch {
+            // Fall through to apartment session
+          }
+        }
+
+        // Direct unit session for vacant/standby apartments so every QR opens its apartment cleanly
+        const unitSession: PortalSession = {
+          id: `unit-sess-${apt.unitNumber}`,
+          reservationRef: res?.id || `UNIT-${apt.unitNumber}`,
+          apartmentRef: `${apt.unitNumber} - ${apt.name}`,
+          guestName: res?.primaryGuest.fullName || `Apartment ${apt.unitNumber} Guest`,
+          tokenHash: `unit-${apt.unitNumber}`,
+          checkInDate: res?.checkInDate || new Date().toISOString(),
+          checkOutDate: res?.checkOutDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          lastActiveAt: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+        };
+        setSession(unitSession);
+        sessionStorage.removeItem('guestcare_token');
+        sessionStorage.setItem('guestcare_active_session', JSON.stringify(unitSession));
+        return true;
+      };
+
+      // 1. Validate explicit QR token from URL against local cache + live Supabase
+      if (tokenParam) {
+        const res = await tokenService.validateToken(tokenParam);
+        if (res.valid && res.session) {
+          setSession(res.session);
+          sessionStorage.setItem('guestcare_token', tokenParam);
+          sessionStorage.setItem('guestcare_active_session', JSON.stringify(res.session));
+          setLoading(false);
+          return;
+        }
+        // Respect explicit revocation, otherwise fall back to exact apartment unit code if present
+        const isExplicitlyRevoked = Boolean(res.error && res.error.toLowerCase().includes('revoked'));
+        if (!isExplicitlyRevoked && unitParam && (await resolveByUnit(unitParam))) {
+          setLoading(false);
+          return;
+        }
+        setAuthError(res.error || 'Access pass could not be verified. Please contact Front Desk.');
+        setLoading(false);
+        return;
       }
 
-      if (!activeToken) {
+      // 2. Direct apartment QR code (?unit=3A, ?unit=8B, etc.)
+      if (unitParam) {
+        const resolved = await resolveByUnit(unitParam);
+        if (resolved) {
+          setLoading(false);
+          return;
+        }
+        setAuthError(`Apartment "${unitParam}" was not found. Please scan the QR code inside your apartment.`);
+        setLoading(false);
+        return;
+      }
+
+      // 3. Returning guest in same browser tab (e.g. back from /portal/requests)
+      const cachedSessionRaw = sessionStorage.getItem('guestcare_active_session');
+      if (cachedSessionRaw) {
         try {
-          const generated = await tokenService.createPortalSession('RES-89211');
-          activeToken = generated.rawToken;
-          sessionStorage.setItem('guestcare_token', activeToken);
+          const parsed = JSON.parse(cachedSessionRaw) as PortalSession;
+          setSession(parsed);
+          setLoading(false);
+          return;
         } catch {
-          setAuthError('No active room pass found. Please scan the QR code located in your apartment.');
+          // Ignore malformed cache
+        }
+      }
+
+      const storedToken = sessionStorage.getItem('guestcare_token');
+      if (storedToken) {
+        const res = await tokenService.validateToken(storedToken);
+        if (res.valid && res.session) {
+          setSession(res.session);
+          sessionStorage.setItem('guestcare_active_session', JSON.stringify(res.session));
           setLoading(false);
           return;
         }
       }
 
-      const res = await tokenService.validateToken(activeToken);
-      if (res.valid && res.session) {
-        setSession(res.session);
-        sessionStorage.setItem('guestcare_token', activeToken);
-      } else {
-        setAuthError(res.error || 'Access pass could not be verified.');
+      // 4. Direct visit to /portal with no parameters -> default to Apartment 1A
+      const fallbackOk = await resolveByUnit('1A');
+      if (!fallbackOk) {
+        setAuthError('No active room pass found. Please scan the QR code located in your apartment.');
       }
       setLoading(false);
     }
 
     initSession();
-  }, [tokenParam]);
+  }, [tokenParam, unitParam]);
 
   // Load live data & subscribe to both requestService and staff portalConfigService
   useEffect(() => {
