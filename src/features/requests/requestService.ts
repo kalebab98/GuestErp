@@ -22,6 +22,9 @@ import {
   updateRequestInSupabase,
   insertCommentToSupabase,
   insertFeedbackToSupabase,
+  fetchLiveRequestsFromSupabase,
+  fetchLiveFeedbackFromSupabase,
+  subscribeToGuestCareRealtime,
 } from '@/lib/supabaseSync';
 
 export const BASE_CATEGORIES: Category[] = [
@@ -326,7 +329,7 @@ class RequestService {
     {
       id: 'fb-1',
       reservationRef: 'RES-89213',
-      apartmentRef: '304 - Two Bedroom Residence 304',
+      apartmentRef: '2A - Apartment 2A',
       guestName: 'Elena Rostova',
       overallRating: 5,
       cleanlinessRating: 5,
@@ -342,6 +345,36 @@ class RequestService {
   private feedbackActions: FeedbackAction[] = loadStored(ACTIONS_STORAGE_KEY, []);
   private listeners: Array<() => void> = [];
   private ticketCounter = 4;
+
+  constructor() {
+    void this.syncFromSupabase();
+    subscribeToGuestCareRealtime(() => {
+      void this.syncFromSupabase();
+      void portalConfigService.syncFromSupabase();
+    });
+  }
+
+  async syncFromSupabase(): Promise<void> {
+    const [remoteReqs, remoteFb] = await Promise.all([
+      fetchLiveRequestsFromSupabase(),
+      fetchLiveFeedbackFromSupabase(),
+    ]);
+
+    let updated = false;
+    if (remoteReqs && remoteReqs.length > 0) {
+      this.requests = remoteReqs;
+      updated = true;
+    }
+    if (remoteFb && remoteFb.length > 0) {
+      this.feedback = remoteFb;
+      updated = true;
+    }
+    if (updated) {
+      saveStored(REQUESTS_STORAGE_KEY, this.requests);
+      saveStored(FEEDBACK_STORAGE_KEY, this.feedback);
+      this.listeners.forEach(l => l());
+    }
+  }
 
   subscribe(listener: () => void): () => void {
     this.listeners.push(listener);

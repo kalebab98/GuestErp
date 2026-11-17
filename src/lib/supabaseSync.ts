@@ -158,6 +158,116 @@ export async function insertFeedbackToSupabase(fb: GuestFeedback): Promise<void>
   }
 }
 
+// --- Live Hydration (Requests, Comments, Status History, Feedback) ---
+
+export async function fetchLiveRequestsFromSupabase(): Promise<GuestRequest[] | null> {
+  if (!canUseLiveSupabase()) return null;
+  try {
+    const [reqRes, cmtRes, histRes, catRes] = await Promise.all([
+      supabase.from('requests').select('*').order('created_at', { ascending: false }).limit(200),
+      supabase.from('comments').select('*').order('created_at', { ascending: true }).limit(500),
+      supabase.from('status_history').select('*').order('created_at', { ascending: true }).limit(500),
+      supabase.from('categories').select('id, code'),
+    ]);
+
+    if (reqRes.error || !reqRes.data) return null;
+
+    const catUuidToCode: Record<string, string> = {};
+    (catRes.data || []).forEach((c: any) => {
+      catUuidToCode[c.id] = c.code;
+    });
+
+    const commentsByReq: Record<string, RequestComment[]> = {};
+    (cmtRes.data || []).forEach((c: any) => {
+      if (!commentsByReq[c.request_id]) commentsByReq[c.request_id] = [];
+      commentsByReq[c.request_id].push({
+        id: c.id,
+        requestId: c.request_id,
+        authorType: c.author_type,
+        authorId: c.author_id || undefined,
+        authorName: c.author_name,
+        content: c.content,
+        isInternal: Boolean(c.is_internal),
+        createdAt: c.created_at,
+      });
+    });
+
+    const historyByReq: Record<string, any[]> = {};
+    (histRes.data || []).forEach((h: any) => {
+      if (!historyByReq[h.request_id]) historyByReq[h.request_id] = [];
+      historyByReq[h.request_id].push({
+        id: h.id,
+        requestId: h.request_id,
+        fromStatus: h.from_status || undefined,
+        toStatus: h.to_status,
+        changedByType: h.changed_by_type,
+        changedById: h.changed_by_id || undefined,
+        changedByName: h.changed_by_name,
+        changeReason: h.change_reason || undefined,
+        createdAt: h.created_at,
+      });
+    });
+
+    return reqRes.data.map((r: any) => ({
+      id: r.id,
+      ticketNumber: r.ticket_number,
+      reservationRef: r.reservation_ref,
+      apartmentRef: r.apartment_ref,
+      guestName: r.guest_name,
+      categoryId: catUuidToCode[r.category_id] || r.category_id,
+      title: r.title,
+      description: r.description,
+      priority: r.priority,
+      status: r.status,
+      assignedDepartment: r.assigned_department,
+      assignedStaffId: r.assigned_staff_id || undefined,
+      assignedStaffName: r.assigned_staff_name || undefined,
+      resolutionNotes: r.resolution_notes || undefined,
+      resolvedAt: r.resolved_at || undefined,
+      closedAt: r.closed_at || undefined,
+      guestConfirmedAt: r.guest_confirmed_at || undefined,
+      guestSatisfaction: r.guest_satisfaction || undefined,
+      reopenCount: r.reopen_count || 0,
+      reopenReason: r.reopen_reason || undefined,
+      createdAt: r.created_at,
+      updatedAt: r.updated_at,
+      comments: commentsByReq[r.id] || [],
+      statusHistory: historyByReq[r.id] || [],
+    }));
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchLiveFeedbackFromSupabase(): Promise<GuestFeedback[] | null> {
+  if (!canUseLiveSupabase()) return null;
+  try {
+    const { data, error } = await supabase
+      .from('feedback')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(100);
+    if (error || !data) return null;
+    return data.map((f: any) => ({
+      id: f.id,
+      reservationRef: f.reservation_ref,
+      apartmentRef: f.apartment_ref,
+      guestName: f.guest_name,
+      overallRating: f.overall_rating,
+      cleanlinessRating: f.cleanliness_rating || undefined,
+      staffRating: f.staff_rating || undefined,
+      comfortRating: f.comfort_rating || undefined,
+      comments: f.comments || undefined,
+      isAnonymous: Boolean(f.is_anonymous),
+      status: f.status,
+      createdAt: f.created_at,
+      updatedAt: f.updated_at,
+    }));
+  } catch {
+    return null;
+  }
+}
+
 // --- Photo Upload to Private Supabase Storage Bucket (guestcare-attachments) ---
 
 export async function uploadAttachmentToSupabase(file: File, folder = 'requests'): Promise<string | null> {
@@ -194,3 +304,4 @@ export function subscribeToGuestCareRealtime(onUpdate: () => void): () => void {
     return () => {};
   }
 }
+
