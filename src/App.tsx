@@ -13,6 +13,7 @@ import { FeedbackPage } from './features/staff/pages/FeedbackPage';
 import { ReportsPage } from './features/staff/pages/ReportsPage';
 import { SettingsPage } from './features/staff/pages/SettingsPage';
 import { PortalConfigPage } from './features/staff/pages/PortalConfigPage';
+import { ApartmentQRCodesPage } from './features/staff/pages/ApartmentQRCodesPage';
 
 export function App() {
   return (
@@ -33,6 +34,7 @@ export function App() {
           <Route path="housekeeping" element={<HousekeepingPage />} />
           <Route path="health" element={<GuestHealthPage />} />
           <Route path="feedback" element={<FeedbackPage />} />
+          <Route path="qr-codes" element={<ApartmentQRCodesPage />} />
           <Route path="portal-config" element={<PortalConfigPage />} />
           <Route path="reports" element={<ReportsPage />} />
           <Route path="settings" element={<SettingsPage />} />

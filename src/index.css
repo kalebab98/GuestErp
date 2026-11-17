@@ -12,7 +12,7 @@
   --popover: 0 0% 100%;
   --popover-foreground: 222.2 84% 4.9%;
 
-  --primary: 174 86% 30%;
+  --primary: 169 67% 20%;
   --primary-foreground: 0 0% 100%;
 
   --secondary: 210 40% 96.1%;
@@ -29,13 +29,13 @@
 
   --border: 214.3 31.8% 91.4%;
   --input: 214.3 31.8% 91.4%;
-  --ring: 174 86% 30%;
+  --ring: 169 67% 20%;
 
   --radius: 0.75rem;
 }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   margin: 0;
   padding: 0;
   background-color: hsl(var(--background));
@@ -48,7 +48,55 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 
-.animate-fadeIn {
-  animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+@keyframes floatOrb {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  33% {
+    transform: translate3d(40px, -30px, 0) scale(1.08);
+  }
+  66% {
+    transform: translate3d(-25px, 25px, 0) scale(0.95);
+  }
 }
 
+@keyframes floatOrbReverse {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  33% {
+    transform: translate3d(-45px, 30px, 0) scale(1.06);
+  }
+  66% {
+    transform: translate3d(30px, -25px, 0) scale(0.94);
+  }
+}
+
+@keyframes driftGrid {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 64px 64px;
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-float-orb {
+  animation: floatOrb 16s ease-in-out infinite;
+}
+
+.animate-float-orb-slow {
+  animation: floatOrbReverse 22s ease-in-out infinite;
+}
+
+.animate-drift-grid {
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+  background-size: 64px 64px;
+  animation: driftGrid 28s linear infinite;
+}

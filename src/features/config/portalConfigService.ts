@@ -8,7 +8,7 @@ const STORAGE_KEYS = {
   FAQS: 'guestcare_config_faqs_v3',
   ITEMS: 'guestcare_config_items_v3',
   PRESETS: 'guestcare_config_presets_v3',
-  PROVIDERS: 'guestcare_config_providers_v4',
+  PROVIDERS: 'guestcare_config_providers_v5',
   WIFI: 'guestcare_config_wifi_v3',
 };
 
@@ -165,6 +165,17 @@ const DEFAULT_PROVIDERS: LocalServiceProvider[] = [
     itemsOffered: ['City Ride', 'Airport Pickup'],
     phone: '6090',
     hours: '24/7',
+    isActive: true,
+  },
+  {
+    id: 'prov-medical-ground',
+    name: 'Building Medical Store (Ground Floor)',
+    category: 'Medical Store & Pharmacy',
+    description: 'Located right on the Ground Floor of this building — medicines, first-aid & personal care.',
+    itemsOffered: ['Medicines', 'First Aid', 'Health Essentials'],
+    phone: '+251 911 550 100',
+    whatsapp: '+251911550100',
+    hours: '8:00 AM – 10:00 PM',
     isActive: true,
   },
   {

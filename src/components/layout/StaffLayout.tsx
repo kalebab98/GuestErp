@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { notificationService } from '@/features/notifications/notificationService';
 import { NotificationItem } from '@/types/guestcare';
 import { QRGeneratorModal } from '@/features/staff/components/QRGeneratorModal';
@@ -19,6 +19,7 @@ import {
   ChevronRight,
   Menu,
   X,
+  LogOut,
 } from 'lucide-react';
 import { formatTimeAgo } from '@/lib/utils';
 
@@ -29,6 +30,7 @@ const NAV_ITEMS = [
   { to: '/staff/housekeeping', label: 'Housekeeping', icon: Sparkles },
   { to: '/staff/health', label: 'Guest Health', icon: Activity },
   { to: '/staff/feedback', label: 'Guest Feedback', icon: MessageSquareHeart },
+  { to: '/staff/qr-codes', label: 'Apartment QR Codes', icon: QrCode },
   { to: '/staff/portal-config', label: 'Portal Items & FAQs', icon: Sliders },
   { to: '/staff/reports', label: 'Reports & Analytics', icon: BarChart3 },
   { to: '/staff/settings', label: 'Settings', icon: Settings },
@@ -36,6 +38,7 @@ const NAV_ITEMS = [
 
 export const StaffLayout: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [qrModalOpen, setQrModalOpen] = useState(false);
   const [notifsOpen, setNotifsOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -133,17 +136,28 @@ export const StaffLayout: React.FC = () => {
         })}
       </nav>
 
-      {/* Footer Quick Link */}
-      <div className="p-4 border-t border-slate-100">
+      {/* Footer Quick Links & Sign Out */}
+      <div className="p-4 border-t border-slate-100 space-y-2">
         <a
           href="/portal"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-[#F6F8F8] hover:bg-white hover:border-[#11574A]/30 px-3 py-2.5 text-xs font-semibold text-slate-700 hover:text-[#11574A] transition-all"
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-[#F6F8F8] hover:bg-white hover:border-[#11574A]/30 px-3 py-2 text-xs font-semibold text-slate-700 hover:text-[#11574A] transition-all"
         >
           <span>Open Guest Portal</span>
           <ExternalLink className="h-3.5 w-3.5" />
         </a>
+        <button
+          type="button"
+          onClick={() => {
+            sessionStorage.removeItem('guestcare_staff_session');
+            navigate('/');
+          }}
+          className="flex w-full items-center justify-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-slate-500 hover:bg-rose-50 hover:text-rose-600 transition-colors"
+        >
+          <LogOut className="h-3.5 w-3.5" />
+          <span>Sign Out</span>
+        </button>
       </div>
     </div>
   );
