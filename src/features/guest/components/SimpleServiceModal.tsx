@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Category, Priority, RequestedItemPayload, LocalServiceProvider } from '@/types/guestcare';
 import { portalConfigService } from '@/features/config/portalConfigService';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { PhotoUploader, UploadedFile } from './PhotoUploader';
-import { Plus, Minus, Check, AlertCircle, Phone, MessageCircle, Store } from 'lucide-react';
+import { Plus, Minus, Check, AlertCircle, Phone, MessageCircle, Store, X, ShoppingBag } from 'lucide-react';
 
 interface SimpleServiceModalProps {
   isOpen: boolean;
@@ -55,10 +55,26 @@ export const SimpleServiceModal: React.FC<SimpleServiceModalProps> = ({
     }
   }, [category, isOpen, initialPreset]);
 
-  if (!category) return null;
+  const deliverableItems = category?.presetItems || [];
+  const quickChips = category?.commonIssues || [];
 
-  const deliverableItems = category.presetItems || [];
-  const quickChips = category.commonIssues || [];
+  const selectedItems = useMemo(() => {
+    return deliverableItems
+      .filter(item => (itemQuantities[item.id] || 0) > 0)
+      .map(item => ({
+        id: item.id,
+        name: item.name,
+        quantity: itemQuantities[item.id],
+        unit: item.unit,
+      }));
+  }, [deliverableItems, itemQuantities]);
+
+  const totalSelectedCount = useMemo(
+    () => selectedItems.reduce((sum, item) => sum + item.quantity, 0),
+    [selectedItems]
+  );
+
+  if (!category) return null;
 
   const updateQty = (id: string, delta: number, max = 10) => {
     setItemQuantities(prev => {
@@ -67,16 +83,18 @@ export const SimpleServiceModal: React.FC<SimpleServiceModalProps> = ({
     });
   };
 
+  const removeItem = (id: string) => {
+    setItemQuantities(prev => ({ ...prev, [id]: 0 }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const requestedItems: RequestedItemPayload[] = [];
-    deliverableItems.forEach(item => {
-      const qty = itemQuantities[item.id] || 0;
-      if (qty > 0) {
-        requestedItems.push({ name: item.name, quantity: qty, unit: item.unit });
-      }
-    });
+    const requestedItems: RequestedItemPayload[] = selectedItems.map(i => ({
+      name: i.name,
+      quantity: i.quantity,
+      unit: i.unit,
+    }));
 
     let title = generalIssue.trim();
     if (!title && requestedItems.length > 0) {
@@ -155,7 +173,7 @@ export const SimpleServiceModal: React.FC<SimpleServiceModalProps> = ({
 
         {/* 2. Deliverable Items (Editable from Staff Dashboard) */}
         {deliverableItems.length > 0 && (
-          <div className="space-y-2">
+          <div className="space-y-2.5">
             <label className="text-xs font-semibold text-slate-500">
               Or add items to deliver
             </label>
@@ -203,10 +221,49 @@ export const SimpleServiceModal: React.FC<SimpleServiceModalProps> = ({
                 );
               })}
             </div>
+
+            {/* Live Selected Items Summary Box shown right below */}
+            {selectedItems.length > 0 && (
+              <div className="rounded-xl bg-[#F0F7F5] border border-[#11574A]/25 p-3 space-y-2 animate-fadeIn">
+                <div className="flex items-center justify-between">
+                  <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#11574A]">
+                    <ShoppingBag className="h-3.5 w-3.5" />
+                    <span>Selected to Deliver ({totalSelectedCount})</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setItemQuantities({})}
+                    className="text-[11px] font-medium text-slate-500 hover:text-rose-600 transition-colors"
+                  >
+                    Clear all
+                  </button>
+                </div>
+
+                <div className="flex flex-wrap gap-1.5">
+                  {selectedItems.map(item => (
+                    <span
+                      key={item.id}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-white border border-[#11574A]/20 px-2.5 py-1 text-xs font-semibold text-slate-800 shadow-2xs"
+                    >
+                      <span className="text-[#11574A] font-bold">{item.quantity}x</span>
+                      <span>{item.name}</span>
+                      <button
+                        type="button"
+                        onClick={() => removeItem(item.id)}
+                        className="ml-0.5 text-slate-400 hover:text-rose-600"
+                        aria-label={`Remove ${item.name}`}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
-        {/* 3. General Issue / Request Box (REQUIRED BEFORE Additional Note) */}
+        {/* 3. General Issue / Request Box (BEFORE Additional Note) */}
         <div className="space-y-1.5">
           <label className="text-xs font-semibold text-slate-700">
             General issue / What do you need?
@@ -245,7 +302,7 @@ export const SimpleServiceModal: React.FC<SimpleServiceModalProps> = ({
           <div className="space-y-2 pt-2 border-t border-slate-100">
             <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-600">
               <Store className="h-3.5 w-3.5 text-[#11574A]" />
-              <span>Or contact local shop directly</span>
+              <span>Or call local service directly</span>
             </div>
             <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
               {providers.map(p => (
@@ -260,10 +317,11 @@ export const SimpleServiceModal: React.FC<SimpleServiceModalProps> = ({
                   <div className="flex items-center gap-1.5 shrink-0">
                     <a
                       href={`tel:${p.phone.replace(/\s+/g, '')}`}
-                      className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-700 hover:text-[#11574A]"
+                      className="inline-flex items-center gap-1 rounded-lg bg-white border border-slate-200 px-2 py-1 text-[11px] font-mono font-bold text-[#11574A] hover:bg-slate-50"
                       title={`Call ${p.name}`}
                     >
-                      <Phone className="h-3.5 w-3.5" />
+                      <Phone className="h-3 w-3" />
+                      <span>{p.phone}</span>
                     </a>
                     {p.whatsapp && (
                       <a

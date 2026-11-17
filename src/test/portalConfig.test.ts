@@ -71,3 +71,4 @@ describe('Staff Portal Content & Catalog Configuration Service', () => {
     expect(portalConfigService.getProviders().some(p => p.id === newVendor.id)).toBe(false);
   });
 });
+

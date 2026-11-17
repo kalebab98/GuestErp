@@ -1,14 +1,15 @@
 // Portal Content & Catalog Configuration Service
-// All FAQs, Deliverable Items, Common Presets, and Local Service Providers
+// All FAQs, Deliverable Items, Common Presets, Wi-Fi Info, and Local Directory Numbers
 // are dynamically editable from the Staff Dashboard and reflect live in the Guest Portal.
 
 import { CategoryCode, FAQItem, LocalServiceProvider, PresetServiceItem } from '@/types/guestcare';
 
 const STORAGE_KEYS = {
-  FAQS: 'guestcare_config_faqs_v2',
-  ITEMS: 'guestcare_config_items_v2',
-  PRESETS: 'guestcare_config_presets_v2',
-  PROVIDERS: 'guestcare_config_providers_v2',
+  FAQS: 'guestcare_config_faqs_v3',
+  ITEMS: 'guestcare_config_items_v3',
+  PRESETS: 'guestcare_config_presets_v3',
+  PROVIDERS: 'guestcare_config_providers_v3',
+  WIFI: 'guestcare_config_wifi_v3',
 };
 
 export interface CategoryPreset {
@@ -17,6 +18,16 @@ export interface CategoryPreset {
   label: string;
   isActive: boolean;
 }
+
+export interface WifiConfig {
+  networkName: string;
+  password: string;
+}
+
+const DEFAULT_WIFI: WifiConfig = {
+  networkName: 'GrandMarina-5G',
+  password: 'residenceguest',
+};
 
 const DEFAULT_FAQS: FAQItem[] = [
   {
@@ -28,7 +39,7 @@ const DEFAULT_FAQS: FAQItem[] = [
   {
     id: 'faq-2',
     question: 'How do I connect to the apartment Wi-Fi?',
-    answer: 'Select network "GrandMarina-5G" and enter password "residenceguest". You can tap "Wi-Fi Details" at the top of this page to copy it with one tap.',
+    answer: 'The Wi-Fi network name and password are shown right at the top of your Guest Portal with a one-tap Copy button.',
     isActive: true,
   },
   {
@@ -39,8 +50,8 @@ const DEFAULT_FAQS: FAQItem[] = [
   },
   {
     id: 'faq-4',
-    question: 'Can I order food, coffee, SIM cards, or groceries to my apartment?',
-    answer: 'Yes! Open "Shop & Delivery" to request common essentials directly through our team or contact our verified local service partners.',
+    question: 'How do I get a taxi or order food, coffee, or SIM cards?',
+    answer: 'Use the "Local Services & Quick Dial" card below to call RIDE (8294), Feres (6090), or local shops directly — or place a "Shop & Delivery" request for our Front Desk to bring it to your door.',
     isActive: true,
   },
   {
@@ -66,7 +77,7 @@ const DEFAULT_DELIVERABLE_ITEMS: PresetServiceItem[] = [
   { id: 'item-laundry-dry', categoryCode: 'laundry', name: 'Dry Cleaning', unit: 'pieces', maxQty: 8, priceLabel: 'Per piece', isActive: true },
   { id: 'item-laundry-bag', categoryCode: 'laundry', name: 'Extra Laundry Bag', unit: 'bags', maxQty: 3, priceLabel: 'Free', isActive: true },
 
-  // Shop & Delivery (Common Guest Essentials)
+  // Shop & Delivery
   { id: 'shop-coffee', categoryCode: 'shop_delivery', name: 'Fresh Coffee / Espresso', unit: 'cups', maxQty: 6, isActive: true },
   { id: 'shop-tea', categoryCode: 'shop_delivery', name: 'Hot Tea (Black / Green / Spiced)', unit: 'cups', maxQty: 6, isActive: true },
   { id: 'shop-water', categoryCode: 'shop_delivery', name: 'Bottled Mineral Water', unit: 'bottles', maxQty: 12, isActive: true },
@@ -88,7 +99,7 @@ const DEFAULT_DELIVERABLE_ITEMS: PresetServiceItem[] = [
 ];
 
 const DEFAULT_PRESETS: CategoryPreset[] = [
-  // Maintenance (NO AC!)
+  // Maintenance (no AC)
   { id: 'pre-m1', categoryCode: 'maintenance', label: 'No hot water / low shower pressure', isActive: true },
   { id: 'pre-m2', categoryCode: 'maintenance', label: 'Sink or shower drain is slow', isActive: true },
   { id: 'pre-m3', categoryCode: 'maintenance', label: 'Light bulb out or power socket issue', isActive: true },
@@ -123,7 +134,7 @@ const DEFAULT_PRESETS: CategoryPreset[] = [
   { id: 'pre-t2', categoryCode: 'internet_tech', label: 'Smart TV / remote control issue', isActive: true },
   { id: 'pre-t3', categoryCode: 'internet_tech', label: 'Need power adapter or extension cord', isActive: true },
 
-  // Front Desk (formerly Concierge)
+  // Front Desk
   { id: 'pre-f1', categoryCode: 'guest_services', label: 'Request late check-out', isActive: true },
   { id: 'pre-f2', categoryCode: 'guest_services', label: 'Luggage assistance / bag storage', isActive: true },
   { id: 'pre-f3', categoryCode: 'guest_services', label: 'Extra apartment keycard', isActive: true },
@@ -134,49 +145,59 @@ const DEFAULT_PRESETS: CategoryPreset[] = [
   { id: 'pre-o2', categoryCode: 'other', label: 'General question for reception', isActive: true },
 ];
 
+// Unified Local Services & Quick Dial Directory (Ethiopia Ride + Shops + Coffee + Food)
 const DEFAULT_PROVIDERS: LocalServiceProvider[] = [
   {
+    id: 'prov-ride',
+    name: 'RIDE Taxi (Ethiopia)',
+    category: 'Ride & Airport Taxi',
+    description: '24/7 metered taxi & airport pickup anywhere in Addis Ababa.',
+    itemsOffered: ['City Ride', 'Airport Transfer'],
+    phone: '8294',
+    hours: '24/7',
+    isActive: true,
+  },
+  {
+    id: 'prov-feres',
+    name: 'Feres Ride (Ethiopia)',
+    category: 'Ride & City Taxi',
+    description: 'Fast on-demand city car dispatch across Addis Ababa.',
+    itemsOffered: ['City Ride', 'Airport Pickup'],
+    phone: '6090',
+    hours: '24/7',
+    isActive: true,
+  },
+  {
     id: 'prov-market',
-    name: 'Corner 24/7 Mini Market',
-    category: 'Cards, Cigarettes & Groceries',
-    description: 'Fast room delivery for mobile top-up cards, SIM cards, cigarettes, water, snacks, and everyday essentials.',
-    itemsOffered: ['Mobile Top-up Cards', 'Cigarettes', 'Bottled Water', 'Snacks', 'Toiletries'],
-    phone: '+1 (555) 210-4411',
-    whatsapp: '+15552104411',
+    name: 'Nearby Mini Market & Shop',
+    category: 'Cards, Cigarettes, Water & Snacks',
+    description: 'Ethio Telecom / Safaricom recharge cards, cigarettes, bottled water & daily items.',
+    itemsOffered: ['Mobile Cards', 'Cigarettes', 'Water', 'Snacks'],
+    phone: '+251 911 234 567',
+    whatsapp: '+251911234567',
     hours: 'Open 24/7',
     isActive: true,
   },
   {
     id: 'prov-coffee',
-    name: 'Roast & Leaf Café',
-    category: 'Coffee, Tea & Bakery',
-    description: 'Freshly brewed espresso, traditional coffee, spiced tea, pastries, and breakfast trays delivered hot.',
-    itemsOffered: ['Espresso & Latte', 'Traditional Coffee', 'Black & Green Tea', 'Fresh Pastries'],
-    phone: '+1 (555) 210-8822',
-    whatsapp: '+15552108822',
-    hours: '6:30 AM – 10:00 PM',
+    name: 'Local Coffee & Tea Bar',
+    category: 'Coffee, Tea & Breakfast',
+    description: 'Fresh Ethiopian coffee, macchiato, spiced tea, and warm pastries delivered to your door.',
+    itemsOffered: ['Ethiopian Coffee', 'Macchiato', 'Tea', 'Pastries'],
+    phone: '+251 911 345 678',
+    whatsapp: '+251911345678',
+    hours: '6:30 AM – 9:30 PM',
     isActive: true,
   },
   {
     id: 'prov-food',
-    name: 'Bistro Express Kitchen',
-    category: 'Food & Meal Delivery',
-    description: 'Local dishes, grilled platters, salads, pasta, and late-night meals delivered straight to your door.',
-    itemsOffered: ['Lunch & Dinner Meals', 'Burgers & Grills', 'Salads', 'Fresh Juices'],
-    phone: '+1 (555) 210-9933',
-    whatsapp: '+15552109933',
-    hours: '10:00 AM – 11:30 PM',
-    isActive: true,
-  },
-  {
-    id: 'prov-pharmacy',
-    name: 'CityCare Pharmacy Delivery',
-    category: 'Pharmacy & Essentials',
-    description: 'Over-the-counter medicines, pain relief, first-aid supplies, and personal care items.',
-    itemsOffered: ['Pain Relief', 'Cold & Flu', 'First Aid', 'Personal Care'],
-    phone: '+1 (555) 210-5500',
-    whatsapp: '+15552105500',
-    hours: '8:00 AM – 10:00 PM',
+    name: 'Local Food & Meal Delivery',
+    category: 'Food & Restaurant Service',
+    description: 'Hot traditional Ethiopian & international meals delivered directly to the apartment.',
+    itemsOffered: ['Lunch & Dinner', 'Traditional Dishes', 'Grills & Salads'],
+    phone: '+251 911 456 789',
+    whatsapp: '+251911456789',
+    hours: '10:00 AM – 11:00 PM',
     isActive: true,
   },
 ];
@@ -208,6 +229,7 @@ class PortalConfigService {
   private items: PresetServiceItem[] = load(STORAGE_KEYS.ITEMS, DEFAULT_DELIVERABLE_ITEMS);
   private presets: CategoryPreset[] = load(STORAGE_KEYS.PRESETS, DEFAULT_PRESETS);
   private providers: LocalServiceProvider[] = load(STORAGE_KEYS.PROVIDERS, DEFAULT_PROVIDERS);
+  private wifi: WifiConfig = load(STORAGE_KEYS.WIFI, DEFAULT_WIFI);
   private listeners: Array<() => void> = [];
 
   subscribe(listener: () => void): () => void {
@@ -222,7 +244,18 @@ class PortalConfigService {
     save(STORAGE_KEYS.ITEMS, this.items);
     save(STORAGE_KEYS.PRESETS, this.presets);
     save(STORAGE_KEYS.PROVIDERS, this.providers);
+    save(STORAGE_KEYS.WIFI, this.wifi);
     this.listeners.forEach(l => l());
+  }
+
+  // --- Wi-Fi Info ---
+  getWifi(): WifiConfig {
+    return { ...this.wifi };
+  }
+
+  updateWifi(patch: Partial<WifiConfig>): void {
+    this.wifi = { ...this.wifi, ...patch };
+    this.emit();
   }
 
   // --- FAQs ---
@@ -315,7 +348,7 @@ class PortalConfigService {
     this.emit();
   }
 
-  // --- Local Service Providers ---
+  // --- Local Service Providers & Quick Dial ---
   getProviders(onlyActive = false): LocalServiceProvider[] {
     return onlyActive ? this.providers.filter(p => p.isActive) : [...this.providers];
   }
@@ -345,6 +378,7 @@ class PortalConfigService {
     this.items = [...DEFAULT_DELIVERABLE_ITEMS];
     this.presets = [...DEFAULT_PRESETS];
     this.providers = [...DEFAULT_PROVIDERS];
+    this.wifi = { ...DEFAULT_WIFI };
     this.emit();
   }
 }

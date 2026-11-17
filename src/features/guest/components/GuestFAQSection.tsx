@@ -58,3 +58,4 @@ export const GuestFAQSection: React.FC<GuestFAQSectionProps> = ({ faqs }) => {
     </section>
   );
 };
+

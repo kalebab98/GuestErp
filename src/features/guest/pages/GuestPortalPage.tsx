@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { tokenService } from '@/lib/tokenService';
 import { requestService } from '@/features/requests/requestService';
-import { portalConfigService } from '@/features/config/portalConfigService';
+import { portalConfigService, WifiConfig } from '@/features/config/portalConfigService';
 import { PortalSession, Category, GuestRequest, FAQItem, LocalServiceProvider } from '@/types/guestcare';
 import { ServiceGrid } from '../components/ServiceGrid';
 import { PopularServicesRow, PopularServiceItem } from '../components/PopularServicesRow';
@@ -20,7 +20,6 @@ import {
   Phone,
   CheckCircle2,
   Clock,
-  ChevronDown,
   AlertCircle,
   Copy,
   Check,
@@ -41,6 +40,7 @@ export const GuestPortalPage: React.FC = () => {
   const [myRequests, setMyRequests] = useState<GuestRequest[]>([]);
   const [faqs, setFaqs] = useState<FAQItem[]>([]);
   const [providers, setProviders] = useState<LocalServiceProvider[]>([]);
+  const [wifi, setWifi] = useState<WifiConfig>(portalConfigService.getWifi());
 
   const [searchQuery, setSearchQuery] = useState('');
   const [showAllCategories, setShowAllCategories] = useState(true);
@@ -50,7 +50,6 @@ export const GuestPortalPage: React.FC = () => {
   const [initialPreset, setInitialPreset] = useState<string | undefined>(undefined);
   const [confirmModalRequest, setConfirmModalRequest] = useState<GuestRequest | null>(null);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
-  const [wifiModalOpen, setWifiModalOpen] = useState(false);
   const [wifiCopied, setWifiCopied] = useState(false);
 
   // Validate token on mount
@@ -98,6 +97,7 @@ export const GuestPortalPage: React.FC = () => {
       setMyRequests(requestService.listRequests({ reservationRef: session.reservationRef }));
       setFaqs(portalConfigService.getFaqs(true));
       setProviders(portalConfigService.getProviders(true));
+      setWifi(portalConfigService.getWifi());
     };
 
     loadData();
@@ -184,7 +184,7 @@ export const GuestPortalPage: React.FC = () => {
   };
 
   const handleCopyWifi = () => {
-    navigator.clipboard.writeText('residenceguest');
+    navigator.clipboard.writeText(wifi.password);
     setWifiCopied(true);
     setTimeout(() => setWifiCopied(false), 2000);
   };
@@ -228,42 +228,31 @@ export const GuestPortalPage: React.FC = () => {
 
   const activeRequests = myRequests.filter(r => !['closed', 'cancelled'].includes(r.status));
   const resolvedPendingConfirmation = myRequests.filter(r => r.status === 'resolved');
+  const unitLabel = session.apartmentRef.split(' - ')[0];
 
   return (
     <div className="min-h-screen bg-white text-slate-900 font-sans pb-24 md:pb-12 antialiased">
       {/* Top Navigation Bar: Responsive (Mobile + Tablet + PC) */}
       <header className="sticky top-0 z-30 border-b border-slate-100 bg-white/95 backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 sm:px-6 py-3">
-          {/* Apartment Unit Selector */}
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#F0F7F5] text-[#11574A]">
-              <MapPin className="h-4 w-4" />
-            </div>
-            <div className="text-left">
-              <span className="block text-[10px] font-medium text-slate-400 leading-none">
-                Your Apartment
+          {/* Brand Logo + FULL WORD ALWAYS SHOWN ON MOBILE, TABLET & PC */}
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#11574A] text-white font-black text-xs tracking-wider shadow-xs">
+              GC
+            </span>
+            <div className="text-left leading-tight">
+              <span className="block text-sm sm:text-base font-extrabold tracking-tight text-slate-900">
+                GuestCare
               </span>
-              <button
-                type="button"
-                onClick={() => setWifiModalOpen(true)}
-                className="inline-flex items-center gap-1 text-xs sm:text-sm font-bold text-slate-900 hover:text-[#11574A] transition-colors mt-0.5"
-              >
-                <span>{session.apartmentRef.split(' - ')[0]}</span>
-                <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
-              </button>
+              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500">
+                <MapPin className="h-3 w-3 text-[#11574A]" />
+                <span>Apt {unitLabel}</span>
+              </span>
             </div>
           </div>
 
           {/* Desktop / Tablet Navigation Links */}
           <div className="hidden md:flex items-center gap-6 text-xs font-semibold text-slate-600">
-            <button
-              onClick={() => setWifiModalOpen(true)}
-              className="inline-flex items-center gap-1.5 hover:text-[#11574A] transition-colors"
-            >
-              <Wifi className="h-4 w-4 text-[#11574A]" />
-              <span>Wi-Fi Details</span>
-            </button>
-
             <button
               onClick={() => navigate('/portal/requests')}
               className="inline-flex items-center gap-1.5 hover:text-[#11574A] transition-colors"
@@ -286,17 +275,18 @@ export const GuestPortalPage: React.FC = () => {
             </button>
           </div>
 
-          {/* User Profile & Call */}
+          {/* User Profile & Direct Call */}
           <div className="flex items-center gap-2 sm:gap-3">
             <a
               href="tel:+15550192834"
-              className="inline-flex items-center justify-center h-8 w-8 rounded-full bg-[#F0F7F5] text-[#11574A] hover:bg-[#E2F0EC] transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-full bg-[#F0F7F5] px-3 py-1.5 text-xs font-semibold text-[#11574A] hover:bg-[#E2F0EC] transition-colors"
               title="Call Front Desk"
             >
               <Phone className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Front Desk</span>
             </a>
 
-            <div className="flex items-center gap-2 pl-1 border-l border-slate-200">
+            <div className="flex items-center gap-2 pl-1.5 border-l border-slate-200">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#11574A] text-white font-bold text-xs">
                 {session.guestName
                   .split(' ')
@@ -334,44 +324,80 @@ export const GuestPortalPage: React.FC = () => {
           )}
         </div>
 
-        {/* Hero Card */}
+        {/* Hero Card + Directly Visible Wi-Fi Password Box */}
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0F4F43] via-[#11574A] to-[#156758] p-5 sm:p-7 md:p-8 text-white shadow-lg">
           <div className="absolute -top-12 -right-12 h-44 w-44 rounded-full bg-white/5 pointer-events-none" />
           <div className="absolute -bottom-16 -left-16 h-48 w-48 rounded-full bg-black/10 pointer-events-none" />
 
-          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5">
-            <div className="space-y-2 max-w-md">
+          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-5 items-center">
+            {/* Left: Welcome Headline */}
+            <div className="lg:col-span-7 space-y-2.5">
               <span className="inline-block text-[10px] sm:text-xs font-mono font-semibold uppercase tracking-widest text-teal-200">
-                In-Stay Guest Assistant
+                Welcome, {session.guestName} • Apt {unitLabel}
               </span>
               <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight text-white leading-tight">
-                YOUR COMFORT, <br className="hidden sm:inline" />
-                ONE TAP AWAY!
+                YOUR COMFORT, ONE TAP AWAY!
               </h1>
-              <p className="text-xs sm:text-sm text-teal-100/90 leading-relaxed font-light">
+              <p className="text-xs sm:text-sm text-teal-100/90 leading-relaxed font-light max-w-lg">
                 Request housekeeping, laundry, maintenance, or order coffee, food, and everyday essentials right to your door.
               </p>
+              <div className="pt-1">
+                <Button
+                  onClick={() => {
+                    const target = document.getElementById('service-categories-section');
+                    target?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="bg-white text-[#11574A] hover:bg-teal-50 font-bold text-xs sm:text-sm rounded-xl px-5 py-2.5 shadow-sm"
+                >
+                  Explore Services
+                </Button>
+              </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3">
-              <Button
-                onClick={() => {
-                  const target = document.getElementById('service-categories-section');
-                  target?.scrollIntoView({ behavior: 'smooth' });
-                }}
-                className="bg-white text-[#11574A] hover:bg-teal-50 font-bold text-xs sm:text-sm rounded-xl px-5 py-2.5 shadow-sm"
-              >
-                Explore Services
-              </Button>
+            {/* Right: Directly Visible Apartment Wi-Fi & Password Card */}
+            <div className="lg:col-span-5">
+              <div className="rounded-2xl bg-black/20 backdrop-blur-md border border-white/15 p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/15 text-teal-200">
+                      <Wifi className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <span className="block text-[10px] uppercase tracking-wider text-teal-200 font-semibold">
+                        Apartment Wi-Fi
+                      </span>
+                      <span className="block text-sm font-bold text-white font-mono">
+                        {wifi.networkName}
+                      </span>
+                    </div>
+                  </div>
 
-              <button
-                type="button"
-                onClick={() => setWifiModalOpen(true)}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 px-3.5 py-2.5 text-xs font-semibold text-white transition-colors"
-              >
-                <Wifi className="h-3.5 w-3.5 text-teal-200" />
-                <span>Wi-Fi Access</span>
-              </button>
+                  <button
+                    type="button"
+                    onClick={handleCopyWifi}
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-white px-3 py-1.5 text-xs font-bold text-[#11574A] hover:bg-teal-50 active:scale-95 transition-all shadow-xs"
+                  >
+                    {wifiCopied ? (
+                      <>
+                        <Check className="h-3.5 w-3.5 text-emerald-600" />
+                        <span>Copied</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-3.5 w-3.5" />
+                        <span>Copy</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between rounded-xl bg-black/25 px-3.5 py-2 border border-white/10">
+                  <span className="text-[11px] text-teal-200 font-medium">Password</span>
+                  <span className="font-mono text-sm font-bold tracking-wider text-white select-all">
+                    {wifi.password}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -416,12 +442,12 @@ export const GuestPortalPage: React.FC = () => {
                 <p className="text-xs font-bold text-amber-950">
                   {activeRequests.length} Active Request in progress
                 </p>
-                <p className="text-[11px] text-amber-800 truncate max-w-[240px] sm:max-w-md">
+                <p className="text-[11px] text-amber-800 truncate max-w-[220px] sm:max-w-md">
                   {activeRequests[0].title}
                 </p>
               </div>
             </div>
-            <span className="text-xs font-bold text-[#11574A] hover:underline">
+            <span className="text-xs font-bold text-[#11574A] hover:underline shrink-0">
               Track Status &rarr;
             </span>
           </div>
@@ -443,7 +469,7 @@ export const GuestPortalPage: React.FC = () => {
         {/* Section 2: Popular Requests */}
         {!searchQuery && <PopularServicesRow onSelectPopular={handleSelectPopular} />}
 
-        {/* Section 3: Local Shops & Delivery (Cards, Cigarettes, Coffee, Tea, Food — Staff Editable) */}
+        {/* Section 3: ONE Unified Local Shops, Food & Ethiopia Ride Directory Card */}
         {!searchQuery && (
           <LocalProvidersSection
             providers={providers}
@@ -494,7 +520,7 @@ export const GuestPortalPage: React.FC = () => {
         </div>
       </main>
 
-      {/* Fast Service Request Modal (with General Issue Box + Staff-Editable Deliverable Items) */}
+      {/* Fast Service Request Modal (with Selected Items Summary + General Issue Box) */}
       <SimpleServiceModal
         isOpen={Boolean(selectedCategory)}
         onClose={() => {
@@ -522,65 +548,7 @@ export const GuestPortalPage: React.FC = () => {
         onSubmit={handleFeedbackSubmit}
       />
 
-      {/* Wi-Fi Details Modal */}
-      {wifiModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl text-left space-y-4 animate-fadeIn">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#F0F7F5] text-[#11574A]">
-                  <Wifi className="h-4 w-4" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-slate-900">High-Speed Wi-Fi</h3>
-                  <p className="text-[11px] text-slate-400">Complimentary 500Mbps</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setWifiModalOpen(false)}
-                className="text-xs text-slate-400 hover:text-slate-600"
-              >
-                Close
-              </button>
-            </div>
-
-            <div className="space-y-3 rounded-2xl bg-[#F6F8F8] p-4 text-xs">
-              <div>
-                <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">
-                  Network Name
-                </span>
-                <p className="font-mono font-bold text-sm text-slate-800 mt-0.5">GrandMarina-5G</p>
-              </div>
-
-              <div>
-                <span className="text-slate-400 block text-[10px] uppercase font-bold tracking-wider">
-                  Password
-                </span>
-                <div className="flex items-center justify-between mt-0.5">
-                  <p className="font-mono font-bold text-sm text-slate-800">residenceguest</p>
-                  <button
-                    type="button"
-                    onClick={handleCopyWifi}
-                    className="inline-flex items-center gap-1 rounded-lg bg-white border border-slate-200 px-2 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50"
-                  >
-                    {wifiCopied ? <Check className="h-3 w-3 text-emerald-600" /> : <Copy className="h-3 w-3" />}
-                    <span>{wifiCopied ? 'Copied' : 'Copy'}</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <Button
-              className="w-full bg-[#11574A] hover:bg-[#0D443A] text-white text-xs"
-              onClick={() => setWifiModalOpen(false)}
-            >
-              Done
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* Mobile Sticky Bottom Navigation */}
+      {/* Mobile Sticky Bottom Navigation (with Full Word Labels) */}
       <GuestBottomNav
         activeTab="home"
         activeRequestCount={activeRequests.length}

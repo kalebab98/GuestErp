@@ -19,6 +19,7 @@ import {
   RotateCcw,
   Eye,
   EyeOff,
+  Wifi,
 } from 'lucide-react';
 
 const CATEGORY_OPTIONS: Array<{ value: CategoryCode; label: string }> = [
@@ -39,6 +40,9 @@ export const PortalConfigPage: React.FC = () => {
   const [faqs, setFaqs] = useState<FAQItem[]>([]);
   const [providers, setProviders] = useState<LocalServiceProvider[]>([]);
   const [presets, setPresets] = useState<CategoryPreset[]>([]);
+  const [wifiNetwork, setWifiNetwork] = useState(portalConfigService.getWifi().networkName);
+  const [wifiPassword, setWifiPassword] = useState(portalConfigService.getWifi().password);
+  const [wifiSaved, setWifiSaved] = useState(false);
 
   // Filter / Form state for Items
   const [itemCatFilter, setItemCatFilter] = useState<CategoryCode | 'all'>('all');
@@ -177,12 +181,48 @@ export const PortalConfigPage: React.FC = () => {
         </Button>
       </div>
 
+      {/* Wi-Fi Credentials shown directly on Guest Portal */}
+      <Card className="p-4 bg-white">
+        <form
+          onSubmit={e => {
+            e.preventDefault();
+            portalConfigService.updateWifi({ networkName: wifiNetwork.trim(), password: wifiPassword.trim() });
+            setWifiSaved(true);
+            setTimeout(() => setWifiSaved(false), 2000);
+          }}
+          className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end"
+        >
+          <div className="sm:col-span-5">
+            <Input
+              label="Guest Wi-Fi Network Name"
+              value={wifiNetwork}
+              onChange={e => setWifiNetwork(e.target.value)}
+              required
+            />
+          </div>
+          <div className="sm:col-span-5">
+            <Input
+              label="Guest Wi-Fi Password"
+              value={wifiPassword}
+              onChange={e => setWifiPassword(e.target.value)}
+              required
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <Button type="submit" className="w-full h-10 text-xs gap-1.5">
+              {wifiSaved ? <Check className="h-3.5 w-3.5" /> : <Wifi className="h-3.5 w-3.5" />}
+              <span>{wifiSaved ? 'Saved' : 'Save Wi-Fi'}</span>
+            </Button>
+          </div>
+        </form>
+      </Card>
+
       {/* Navigation Tabs */}
       <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-3">
         {[
           { id: 'items', label: `Deliverable Items (${items.length})`, icon: Package },
           { id: 'faqs', label: `FAQs (${faqs.length})`, icon: HelpCircle },
-          { id: 'providers', label: `Local Shops & Vendors (${providers.length})`, icon: Store },
+          { id: 'providers', label: `Local Directory & Ride Numbers (${providers.length})`, icon: Store },
           { id: 'presets', label: `Quick Presets (${presets.length})`, icon: Sparkles },
         ].map(tab => {
           const Icon = tab.icon;
@@ -558,3 +598,4 @@ export const PortalConfigPage: React.FC = () => {
     </div>
   );
 };
+
