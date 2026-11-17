@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { BUILDING_16_APARTMENTS, BUILDING_INFO, mockPMSAdapter } from '@/features/pms/mockAdapter';
+import { BUILDING_INFO, mockPMSAdapter } from '@/features/pms/mockAdapter';
 import { portalConfigService, ContactAndBuildingConfig } from '@/features/config/portalConfigService';
 import { tokenService } from '@/lib/tokenService';
 import { generateQRCodeDataUrl } from '@/lib/crypto';
-import { PMSApartment } from '@/types/pms';
+import { PMSApartment, PMSStayStatus } from '@/types/pms';
 import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Modal } from '@/components/ui/Modal';
 import {
   Download,
   Copy,
@@ -17,6 +19,7 @@ import {
   Cross,
   Phone,
   Clock,
+  Edit2,
 } from 'lucide-react';
 
 interface ApartmentQRState {
@@ -36,6 +39,18 @@ export const ApartmentQRCodesPage: React.FC = () => {
   const [search, setSearch] = useState('');
   const [copiedUnit, setCopiedUnit] = useState<string | null>(null);
   const [initializing, setInitializing] = useState(true);
+
+  // Edit Guest / Apartment Stay modal state
+  const [editingUnit, setEditingUnit] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState({
+    apartmentName: '',
+    guestName: '',
+    guestPhone: '',
+    guestEmail: '',
+    stayStatus: 'checked_in' as PMSStayStatus,
+    checkInDate: '',
+    checkOutDate: '',
+  });
 
   useEffect(() => {
     return portalConfigService.subscribe(() => {
@@ -93,23 +108,64 @@ export const ApartmentQRCodesPage: React.FC = () => {
     let cancelled = false;
     async function initAll() {
       setInitializing(true);
-      const results = await Promise.all(BUILDING_16_APARTMENTS.map(apt => buildQRForApartment(apt)));
+      const allApts = mockPMSAdapter.listAllBuildingApartments();
+      const results = await Promise.all(allApts.map(apt => buildQRForApartment(apt)));
       if (!cancelled) {
         setCards(results);
         setInitializing(false);
       }
     }
     initAll();
+    const unsub = mockPMSAdapter.subscribe(() => {
+      void initAll();
+    });
     return () => {
       cancelled = true;
+      unsub();
     };
   }, [buildQRForApartment]);
+
+  const openEditStayModal = async (unitNumber: string) => {
+    const apt = mockPMSAdapter
+      .listAllBuildingApartments()
+      .find(a => a.unitNumber === unitNumber);
+    const res = await mockPMSAdapter.getReservationByApartmentUnit(unitNumber);
+    const toDateInput = (iso?: string) => (iso ? iso.slice(0, 10) : new Date().toISOString().slice(0, 10));
+
+    setEditForm({
+      apartmentName: apt?.name || `Apartment ${unitNumber}`,
+      guestName: res?.primaryGuest.fullName || `Apartment ${unitNumber} Guest`,
+      guestPhone: res?.primaryGuest.phone || '',
+      guestEmail: res?.primaryGuest.email || '',
+      stayStatus: res?.stayStatus || 'checked_in',
+      checkInDate: toDateInput(res?.checkInDate),
+      checkOutDate: toDateInput(res?.checkOutDate),
+    });
+    setEditingUnit(unitNumber);
+  };
+
+  const handleSaveStay = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUnit) return;
+    mockPMSAdapter.updateApartmentStay(editingUnit, {
+      apartmentName: editForm.apartmentName,
+      guestName: editForm.guestName,
+      guestPhone: editForm.guestPhone,
+      guestEmail: editForm.guestEmail,
+      stayStatus: editForm.stayStatus,
+      checkInDate: new Date(`${editForm.checkInDate}T12:00:00Z`).toISOString(),
+      checkOutDate: new Date(`${editForm.checkOutDate}T12:00:00Z`).toISOString(),
+    });
+    setEditingUnit(null);
+  };
 
   const handleRegenerate = async (unitNumber: string) => {
     setCards(prev =>
       prev.map(c => (c.apartment.unitNumber === unitNumber ? { ...c, loading: true } : c))
     );
-    const apt = BUILDING_16_APARTMENTS.find(a => a.unitNumber === unitNumber);
+    const apt = mockPMSAdapter
+      .listAllBuildingApartments()
+      .find(a => a.unitNumber === unitNumber);
     if (!apt) return;
 
     const existing = cards.find(c => c.apartment.unitNumber === unitNumber);
@@ -300,15 +356,25 @@ export const ApartmentQRCodesPage: React.FC = () => {
                     </p>
                   </div>
 
-                  <span
-                    className={`rounded-full px-2 py-0.5 text-[10px] font-bold border ${
-                      isActive
-                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                        : 'bg-slate-100 text-slate-600 border-slate-200'
-                    }`}
-                  >
-                    {card.stayStatus}
-                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span
+                      className={`rounded-full px-2 py-0.5 text-[10px] font-bold border ${
+                        isActive
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                          : 'bg-slate-100 text-slate-600 border-slate-200'
+                      }`}
+                    >
+                      {card.stayStatus}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => openEditStayModal(card.apartment.unitNumber)}
+                      className="print:hidden inline-flex h-6 w-6 items-center justify-center rounded-lg bg-slate-100 hover:bg-[#11574A] text-slate-600 hover:text-white transition-colors"
+                      title={`Edit Apt ${card.apartment.unitNumber} Guest & Stay`}
+                    >
+                      <Edit2 className="h-3 w-3" />
+                    </button>
+                  </div>
                 </div>
 
                 {/* Live QR Code Display */}
@@ -384,6 +450,89 @@ export const ApartmentQRCodesPage: React.FC = () => {
           })}
         </div>
       )}
+
+      {/* Edit Apartment & Guest Stay Modal */}
+      <Modal
+        isOpen={Boolean(editingUnit)}
+        onClose={() => setEditingUnit(null)}
+        title={`Edit Apartment ${editingUnit || ''} & Guest Stay`}
+        description="Updates guest name, stay dates, status, and apartment portal immediately across devices"
+        size="md"
+      >
+        <form onSubmit={handleSaveStay} className="space-y-3.5 text-left">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Input
+              label="Apartment Label"
+              value={editForm.apartmentName}
+              onChange={e => setEditForm({ ...editForm, apartmentName: e.target.value })}
+              required
+            />
+            <div>
+              <label className="block text-xs font-medium text-slate-700 mb-1">Stay Status</label>
+              <select
+                value={editForm.stayStatus}
+                onChange={e => setEditForm({ ...editForm, stayStatus: e.target.value as PMSStayStatus })}
+                className="w-full h-10 rounded-lg border border-slate-300 bg-white px-2.5 text-xs text-slate-900 focus:border-[#11574A] focus:outline-none"
+              >
+                <option value="checked_in">Active Stay (Checked In)</option>
+                <option value="booked">Upcoming Arrival (Booked)</option>
+                <option value="checked_out">Vacant (Checked Out)</option>
+              </select>
+            </div>
+          </div>
+
+          <Input
+            label="Guest Full Name"
+            placeholder="e.g. Abebe Bikila or Apartment Guest"
+            value={editForm.guestName}
+            onChange={e => setEditForm({ ...editForm, guestName: e.target.value })}
+            required
+          />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Input
+              label="Guest Phone"
+              placeholder="+251 911 ..."
+              value={editForm.guestPhone}
+              onChange={e => setEditForm({ ...editForm, guestPhone: e.target.value })}
+            />
+            <Input
+              label="Guest Email"
+              type="email"
+              placeholder="guest@email.com"
+              value={editForm.guestEmail}
+              onChange={e => setEditForm({ ...editForm, guestEmail: e.target.value })}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Input
+              label="Check-in Date"
+              type="date"
+              value={editForm.checkInDate}
+              onChange={e => setEditForm({ ...editForm, checkInDate: e.target.value })}
+              required
+            />
+            <Input
+              label="Check-out Date"
+              type="date"
+              value={editForm.checkOutDate}
+              onChange={e => setEditForm({ ...editForm, checkOutDate: e.target.value })}
+              required
+            />
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+            <Button type="button" variant="outline" size="sm" onClick={() => setEditingUnit(null)}>
+              Cancel
+            </Button>
+            <Button type="submit" size="sm" className="gap-1.5">
+              <Check className="h-3.5 w-3.5" />
+              <span>Save Stay Changes</span>
+            </Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };

@@ -1,6 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { portalConfigService, CategoryPreset } from '@/features/config/portalConfigService';
-import { CategoryCode, FAQItem, LocalServiceProvider, PresetServiceItem } from '@/types/guestcare';
+import {
+  portalConfigService,
+  CategoryPreset,
+  PortalBrandingConfig,
+  PopularServiceConfig,
+} from '@/features/config/portalConfigService';
+import { requestService } from '@/features/requests/requestService';
+import {
+  Category,
+  CategoryCode,
+  FAQItem,
+  LocalServiceProvider,
+  PresetServiceItem,
+} from '@/types/guestcare';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -20,6 +32,9 @@ import {
   Eye,
   EyeOff,
   Wifi,
+  LayoutGrid,
+  Megaphone,
+  Flame,
 } from 'lucide-react';
 
 const CATEGORY_OPTIONS: Array<{ value: CategoryCode; label: string }> = [
@@ -33,8 +48,45 @@ const CATEGORY_OPTIONS: Array<{ value: CategoryCode; label: string }> = [
   { value: 'other', label: 'Other' },
 ];
 
+type ConfigTab = 'branding' | 'categories' | 'popular' | 'items' | 'providers' | 'faqs' | 'presets';
+
 export const PortalConfigPage: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'items' | 'faqs' | 'providers' | 'presets'>('items');
+  const [activeTab, setActiveTab] = useState<ConfigTab>('providers');
+
+  const [branding, setBranding] = useState<PortalBrandingConfig>(portalConfigService.getBranding());
+  const [brandingSaved, setBrandingSaved] = useState(false);
+
+  const [categories, setCategories] = useState<Category[]>(requestService.getCategories(true));
+  const [editingCatCode, setEditingCatCode] = useState<CategoryCode | null>(null);
+  const [editCatForm, setEditCatForm] = useState({
+    name: '',
+    shortName: '',
+    tagline: '',
+    description: '',
+    slaMinutes: 30,
+  });
+
+  const [popularCards, setPopularCards] = useState<PopularServiceConfig[]>(
+    portalConfigService.getPopularServices()
+  );
+  const [newPopForm, setNewPopForm] = useState({
+    title: '',
+    subtitle: 'Housekeeping',
+    eta: '~20 min',
+    categoryCode: 'housekeeping' as CategoryCode,
+    presetText: '',
+    imageUrl:
+      'https://images.unsplash.com/photo-1616046229478-9901c5536a45?auto=format&fit=crop&w=600&q=80',
+  });
+  const [editingPopId, setEditingPopId] = useState<string | null>(null);
+  const [editPopForm, setEditPopForm] = useState({
+    title: '',
+    subtitle: '',
+    eta: '',
+    categoryCode: 'housekeeping' as CategoryCode,
+    presetText: '',
+    imageUrl: '',
+  });
 
   const [items, setItems] = useState<PresetServiceItem[]>([]);
   const [faqs, setFaqs] = useState<FAQItem[]>([]);
@@ -44,13 +96,21 @@ export const PortalConfigPage: React.FC = () => {
   const [wifiPassword, setWifiPassword] = useState(portalConfigService.getWifi().password);
   const [wifiSaved, setWifiSaved] = useState(false);
 
-  // Filter / Form state for Items
+  // Filter / Form state for Deliverable Items
   const [itemCatFilter, setItemCatFilter] = useState<CategoryCode | 'all'>('all');
   const [newItemCat, setNewItemCat] = useState<CategoryCode>('housekeeping');
   const [newItemName, setNewItemName] = useState('');
   const [newItemUnit, setNewItemUnit] = useState('items');
   const [newItemMaxQty, setNewItemMaxQty] = useState(6);
   const [newItemPrice, setNewItemPrice] = useState('');
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [editItemForm, setEditItemForm] = useState({
+    categoryCode: 'housekeeping' as CategoryCode,
+    name: '',
+    unit: 'items',
+    maxQty: 6,
+    priceLabel: '',
+  });
 
   // Form state for FAQs
   const [newFaqQ, setNewFaqQ] = useState('');
@@ -79,18 +139,114 @@ export const PortalConfigPage: React.FC = () => {
   // Form state for Presets
   const [presetCat, setPresetCat] = useState<CategoryCode>('maintenance');
   const [newPresetLabel, setNewPresetLabel] = useState('');
+  const [editingPresetId, setEditingPresetId] = useState<string | null>(null);
+  const [editPresetLabel, setEditPresetLabel] = useState('');
 
   const loadAll = () => {
+    setBranding(portalConfigService.getBranding());
+    setCategories(requestService.getCategories(true));
+    setPopularCards(portalConfigService.getPopularServices());
     setItems(portalConfigService.getDeliverableItems());
     setFaqs(portalConfigService.getFaqs());
     setProviders(portalConfigService.getProviders());
     setPresets(portalConfigService.getPresets());
+    const w = portalConfigService.getWifi();
+    setWifiNetwork(w.networkName);
+    setWifiPassword(w.password);
   };
 
   useEffect(() => {
     loadAll();
     return portalConfigService.subscribe(loadAll);
   }, []);
+
+  // Handlers: Branding
+  const handleSaveBranding = (e: React.FormEvent) => {
+    e.preventDefault();
+    portalConfigService.updateBranding({
+      portalBrandName: branding.portalBrandName.trim() || 'GuestCare',
+      heroHeadline: branding.heroHeadline.trim(),
+      heroSubtitle: branding.heroSubtitle.trim(),
+      heroCtaLabel: branding.heroCtaLabel.trim() || 'Explore Services',
+      directorySectionTitle: branding.directorySectionTitle.trim(),
+      directoryCardTitle: branding.directoryCardTitle.trim(),
+      directoryCardDescription: branding.directoryCardDescription.trim(),
+      noticeBanner: branding.noticeBanner.trim(),
+    });
+    setBrandingSaved(true);
+    setTimeout(() => setBrandingSaved(false), 2000);
+  };
+
+  // Handlers: Categories
+  const startEditCategory = (cat: Category) => {
+    setEditingCatCode(cat.code);
+    setEditCatForm({
+      name: cat.name,
+      shortName: cat.shortName || cat.name,
+      tagline: cat.tagline || '',
+      description: cat.description,
+      slaMinutes: cat.slaMinutes,
+    });
+  };
+
+  const saveEditCategory = () => {
+    if (!editingCatCode || !editCatForm.name.trim()) return;
+    portalConfigService.updateCategoryOverride(editingCatCode, {
+      name: editCatForm.name.trim(),
+      shortName: editCatForm.shortName.trim() || editCatForm.name.trim(),
+      tagline: editCatForm.tagline.trim(),
+      description: editCatForm.description.trim(),
+      slaMinutes: Math.max(5, Number(editCatForm.slaMinutes) || 30),
+    });
+    setEditingCatCode(null);
+  };
+
+  // Handlers: Popular Cards
+  const handleAddPopular = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPopForm.title.trim()) return;
+    portalConfigService.addPopularService({
+      title: newPopForm.title.trim(),
+      subtitle: newPopForm.subtitle.trim() || 'Service',
+      eta: newPopForm.eta.trim() || '~20 min',
+      categoryCode: newPopForm.categoryCode,
+      presetText: newPopForm.presetText.trim() || newPopForm.title.trim(),
+      imageUrl:
+        newPopForm.imageUrl.trim() ||
+        'https://images.unsplash.com/photo-1616046229478-9901c5536a45?auto=format&fit=crop&w=600&q=80',
+      isActive: true,
+    });
+    setNewPopForm({
+      ...newPopForm,
+      title: '',
+      presetText: '',
+    });
+  };
+
+  const startEditPopular = (p: PopularServiceConfig) => {
+    setEditingPopId(p.id);
+    setEditPopForm({
+      title: p.title,
+      subtitle: p.subtitle,
+      eta: p.eta,
+      categoryCode: p.categoryCode,
+      presetText: p.presetText,
+      imageUrl: p.imageUrl,
+    });
+  };
+
+  const saveEditPopular = () => {
+    if (!editingPopId || !editPopForm.title.trim()) return;
+    portalConfigService.updatePopularService(editingPopId, {
+      title: editPopForm.title.trim(),
+      subtitle: editPopForm.subtitle.trim(),
+      eta: editPopForm.eta.trim(),
+      categoryCode: editPopForm.categoryCode,
+      presetText: editPopForm.presetText.trim(),
+      imageUrl: editPopForm.imageUrl.trim(),
+    });
+    setEditingPopId(null);
+  };
 
   // Handlers: Items
   const handleAddItem = (e: React.FormEvent) => {
@@ -106,6 +262,29 @@ export const PortalConfigPage: React.FC = () => {
     });
     setNewItemName('');
     setNewItemPrice('');
+  };
+
+  const startEditItem = (item: PresetServiceItem) => {
+    setEditingItemId(item.id);
+    setEditItemForm({
+      categoryCode: item.categoryCode,
+      name: item.name,
+      unit: item.unit || 'items',
+      maxQty: item.maxQty || 6,
+      priceLabel: item.priceLabel || '',
+    });
+  };
+
+  const saveEditItem = () => {
+    if (!editingItemId || !editItemForm.name.trim()) return;
+    portalConfigService.updateDeliverableItem(editingItemId, {
+      categoryCode: editItemForm.categoryCode,
+      name: editItemForm.name.trim(),
+      unit: editItemForm.unit.trim() || 'items',
+      maxQty: Math.max(1, Number(editItemForm.maxQty) || 6),
+      priceLabel: editItemForm.priceLabel.trim() || undefined,
+    });
+    setEditingItemId(null);
   };
 
   // Handlers: FAQs
@@ -183,8 +362,25 @@ export const PortalConfigPage: React.FC = () => {
     setNewPresetLabel('');
   };
 
+  const saveEditPreset = () => {
+    if (!editingPresetId || !editPresetLabel.trim()) return;
+    portalConfigService.updatePreset(editingPresetId, { label: editPresetLabel.trim() });
+    setEditingPresetId(null);
+    setEditPresetLabel('');
+  };
+
   const filteredItems = itemCatFilter === 'all' ? items : items.filter(i => i.categoryCode === itemCatFilter);
   const filteredPresets = presets.filter(p => p.categoryCode === presetCat);
+
+  const tabs: Array<{ id: ConfigTab; label: string; icon: React.ComponentType<any> }> = [
+    { id: 'providers', label: `Local Directory (${providers.length})`, icon: Store },
+    { id: 'branding', label: 'Hero & Branding', icon: Megaphone },
+    { id: 'categories', label: `Categories (${categories.length})`, icon: LayoutGrid },
+    { id: 'popular', label: `Popular Cards (${popularCards.length})`, icon: Flame },
+    { id: 'items', label: `Deliverable Items (${items.length})`, icon: Package },
+    { id: 'faqs', label: `FAQs (${faqs.length})`, icon: HelpCircle },
+    { id: 'presets', label: `Quick Presets (${presets.length})`, icon: Sparkles },
+  ];
 
   return (
     <div className="space-y-6 text-left max-w-6xl">
@@ -192,20 +388,20 @@ export const PortalConfigPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
-            <Sliders className="h-5 w-5 text-teal-700" />
-            <span>Guest Portal Content & Catalog Manager</span>
+            <Sliders className="h-5 w-5 text-[#11574A]" />
+            <span>Guest Portal Content & Data Manager</span>
           </h1>
           <p className="text-xs text-slate-500">
-            Edit deliverable items, FAQs, local shop partners, and quick presets — updates reflect live on the Guest Portal
+            Control 100% of Guest Portal content — every edit saves live to Supabase and updates all guest devices immediately
           </p>
         </div>
 
         <Button
           size="sm"
           variant="outline"
-          className="text-xs gap-1.5"
+          className="text-xs gap-1.5 self-start sm:self-auto"
           onClick={() => {
-            if (window.confirm('Reset all portal FAQs, deliverable items, and shop partners back to defaults?')) {
+            if (window.confirm('Reset all Guest Portal text, categories, popular cards, items, directory numbers, and FAQs back to defaults?')) {
               portalConfigService.resetDefaults();
             }
           }}
@@ -252,20 +448,16 @@ export const PortalConfigPage: React.FC = () => {
       </Card>
 
       {/* Navigation Tabs */}
-      <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-3">
-        {[
-          { id: 'items', label: `Deliverable Items (${items.length})`, icon: Package },
-          { id: 'faqs', label: `FAQs (${faqs.length})`, icon: HelpCircle },
-          { id: 'providers', label: `Local Directory & Ride Numbers (${providers.length})`, icon: Store },
-          { id: 'presets', label: `Quick Presets (${presets.length})`, icon: Sparkles },
-        ].map(tab => {
+      <div className="flex flex-wrap gap-1.5 border-b border-slate-200 pb-3">
+        {tabs.map(tab => {
           const Icon = tab.icon;
           const active = activeTab === tab.id;
           return (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
-              className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold transition-all ${
+              type="button"
+              onClick={() => setActiveTab(tab.id)}
+              className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all ${
                 active
                   ? 'bg-[#11574A] text-white shadow-2xs'
                   : 'bg-white text-slate-600 border border-slate-200/80 hover:bg-[#F0F7F5] hover:text-[#11574A]'
@@ -278,10 +470,343 @@ export const PortalConfigPage: React.FC = () => {
         })}
       </div>
 
-      {/* TAB 1: DELIVERABLE ITEMS */}
+      {/* TAB: BRANDING, HERO & LIVE NOTICE BANNER */}
+      {activeTab === 'branding' && (
+        <Card className="p-5 bg-white">
+          <form onSubmit={handleSaveBranding} className="space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div>
+                <h2 className="text-sm font-bold text-slate-900">Portal Branding, Hero Text & Notice Banner</h2>
+                <p className="text-xs text-slate-500">Customize all headlines, welcome text, and live announcements shown on every apartment portal</p>
+              </div>
+              {brandingSaved && (
+                <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600">
+                  <Check className="h-4 w-4" /> Saved live
+                </span>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Input
+                label="Portal Brand Name"
+                value={branding.portalBrandName}
+                onChange={e => setBranding({ ...branding, portalBrandName: e.target.value })}
+                required
+              />
+              <Input
+                label="Hero Button Label"
+                value={branding.heroCtaLabel}
+                onChange={e => setBranding({ ...branding, heroCtaLabel: e.target.value })}
+                required
+              />
+            </div>
+
+            <Input
+              label="Hero Welcome Headline"
+              value={branding.heroHeadline}
+              onChange={e => setBranding({ ...branding, heroHeadline: e.target.value })}
+              required
+            />
+
+            <Textarea
+              label="Hero Welcome Subtitle"
+              rows={2}
+              value={branding.heroSubtitle}
+              onChange={e => setBranding({ ...branding, heroSubtitle: e.target.value })}
+            />
+
+            <Input
+              label="Live Guest Announcement Banner (optional — leave blank to hide)"
+              placeholder="e.g. Scheduled water maintenance today 2:00 PM – 2:30 PM"
+              value={branding.noticeBanner}
+              onChange={e => setBranding({ ...branding, noticeBanner: e.target.value })}
+            />
+
+            <div className="pt-3 border-t border-slate-100 space-y-3">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                Local Directory Card Copy
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Input
+                  label="Directory Section Title"
+                  value={branding.directorySectionTitle}
+                  onChange={e => setBranding({ ...branding, directorySectionTitle: e.target.value })}
+                />
+                <Input
+                  label="Directory Card Title"
+                  value={branding.directoryCardTitle}
+                  onChange={e => setBranding({ ...branding, directoryCardTitle: e.target.value })}
+                />
+              </div>
+              <Textarea
+                label="Directory Card Subtitle"
+                rows={2}
+                value={branding.directoryCardDescription}
+                onChange={e => setBranding({ ...branding, directoryCardDescription: e.target.value })}
+              />
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <Button type="submit" size="sm" className="px-5 gap-1.5 text-xs">
+                <Check className="h-3.5 w-3.5" />
+                <span>Save Branding & Copy</span>
+              </Button>
+            </div>
+          </form>
+        </Card>
+      )}
+
+      {/* TAB: SERVICE CATEGORIES */}
+      {activeTab === 'categories' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {categories.map(cat => (
+            <Card key={cat.id} className="p-4 bg-white space-y-2">
+              {editingCatCode === cat.code ? (
+                <div className="space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <Input
+                      label="Full Category Name"
+                      value={editCatForm.name}
+                      onChange={e => setEditCatForm({ ...editCatForm, name: e.target.value })}
+                    />
+                    <Input
+                      label="Short Tile Label"
+                      value={editCatForm.shortName}
+                      onChange={e => setEditCatForm({ ...editCatForm, shortName: e.target.value })}
+                    />
+                  </div>
+                  <Input
+                    label="Short Tagline"
+                    value={editCatForm.tagline}
+                    onChange={e => setEditCatForm({ ...editCatForm, tagline: e.target.value })}
+                  />
+                  <Textarea
+                    label="Description"
+                    rows={2}
+                    value={editCatForm.description}
+                    onChange={e => setEditCatForm({ ...editCatForm, description: e.target.value })}
+                  />
+                  <Input
+                    label="Target SLA (minutes)"
+                    type="number"
+                    min={5}
+                    value={editCatForm.slaMinutes}
+                    onChange={e => setEditCatForm({ ...editCatForm, slaMinutes: Number(e.target.value) })}
+                  />
+                  <div className="flex items-center gap-2">
+                    <Button size="sm" onClick={saveEditCategory} className="text-xs gap-1">
+                      <Check className="h-3.5 w-3.5" /> Save Category
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => setEditingCatCode(null)} className="text-xs gap-1">
+                      <X className="h-3.5 w-3.5" /> Cancel
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className={`text-sm font-bold ${!cat.isActive ? 'line-through text-slate-400' : 'text-slate-900'}`}>
+                          {cat.shortName || cat.name}
+                        </h3>
+                        <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] font-mono text-slate-600">
+                          SLA {cat.slaMinutes}m
+                        </span>
+                      </div>
+                      <p className="text-[11px] font-medium text-[#11574A]">{cat.name}</p>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 px-2"
+                        onClick={() =>
+                          portalConfigService.updateCategoryOverride(cat.code, { isActive: !cat.isActive })
+                        }
+                        title={cat.isActive ? 'Hide category from Guest Portal' : 'Show category on Guest Portal'}
+                      >
+                        {cat.isActive ? (
+                          <Eye className="h-3.5 w-3.5 text-emerald-600" />
+                        ) : (
+                          <EyeOff className="h-3.5 w-3.5 text-slate-400" />
+                        )}
+                      </Button>
+                      <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => startEditCategory(cat)}>
+                        <Edit2 className="h-3.5 w-3.5 text-slate-600" />
+                      </Button>
+                    </div>
+                  </div>
+                  <p className="text-xs text-slate-600">{cat.description}</p>
+                </>
+              )}
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* TAB: POPULAR REQUEST CARDS */}
+      {activeTab === 'popular' && (
+        <div className="space-y-5">
+          <Card className="p-5 bg-white space-y-4">
+            <h2 className="text-sm font-bold text-slate-900">Add Popular One-Tap Request Card</h2>
+            <form onSubmit={handleAddPopular} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <Input
+                label="Card Title"
+                placeholder="e.g. Airport Transfer"
+                value={newPopForm.title}
+                onChange={e => setNewPopForm({ ...newPopForm, title: e.target.value })}
+                required
+              />
+              <Input
+                label="Subtitle"
+                placeholder="e.g. Front Desk"
+                value={newPopForm.subtitle}
+                onChange={e => setNewPopForm({ ...newPopForm, subtitle: e.target.value })}
+              />
+              <Input
+                label="Estimated Time Badge"
+                placeholder="e.g. ~20 min"
+                value={newPopForm.eta}
+                onChange={e => setNewPopForm({ ...newPopForm, eta: e.target.value })}
+              />
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">Opens Category</label>
+                <select
+                  value={newPopForm.categoryCode}
+                  onChange={e => setNewPopForm({ ...newPopForm, categoryCode: e.target.value as CategoryCode })}
+                  className="w-full h-10 rounded-lg border border-slate-300 bg-white px-2.5 text-xs"
+                >
+                  {CATEGORY_OPTIONS.map(c => (
+                    <option key={c.value} value={c.value}>{c.label}</option>
+                  ))}
+                </select>
+              </div>
+              <Input
+                label="Auto-Filled Request Text"
+                placeholder="e.g. Book airport taxi pickup"
+                value={newPopForm.presetText}
+                onChange={e => setNewPopForm({ ...newPopForm, presetText: e.target.value })}
+              />
+              <Input
+                label="Photo URL"
+                value={newPopForm.imageUrl}
+                onChange={e => setNewPopForm({ ...newPopForm, imageUrl: e.target.value })}
+              />
+              <div className="sm:col-span-2 lg:col-span-3 pt-1">
+                <Button type="submit" size="sm" className="gap-1.5 text-xs">
+                  <Plus className="h-3.5 w-3.5" />
+                  <span>Add Popular Card</span>
+                </Button>
+              </div>
+            </form>
+          </Card>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {popularCards.map(card => (
+              <Card key={card.id} className="p-4 bg-white space-y-3">
+                {editingPopId === card.id ? (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      <Input
+                        label="Card Title"
+                        value={editPopForm.title}
+                        onChange={e => setEditPopForm({ ...editPopForm, title: e.target.value })}
+                      />
+                      <Input
+                        label="Subtitle"
+                        value={editPopForm.subtitle}
+                        onChange={e => setEditPopForm({ ...editPopForm, subtitle: e.target.value })}
+                      />
+                      <Input
+                        label="ETA Badge"
+                        value={editPopForm.eta}
+                        onChange={e => setEditPopForm({ ...editPopForm, eta: e.target.value })}
+                      />
+                      <div>
+                        <label className="block text-xs font-medium text-slate-700 mb-1">Category</label>
+                        <select
+                          value={editPopForm.categoryCode}
+                          onChange={e =>
+                            setEditPopForm({ ...editPopForm, categoryCode: e.target.value as CategoryCode })
+                          }
+                          className="w-full h-10 rounded-lg border border-slate-300 bg-white px-2.5 text-xs"
+                        >
+                          {CATEGORY_OPTIONS.map(c => (
+                            <option key={c.value} value={c.value}>{c.label}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    <Input
+                      label="Auto-Filled Preset Text"
+                      value={editPopForm.presetText}
+                      onChange={e => setEditPopForm({ ...editPopForm, presetText: e.target.value })}
+                    />
+                    <Input
+                      label="Photo URL"
+                      value={editPopForm.imageUrl}
+                      onChange={e => setEditPopForm({ ...editPopForm, imageUrl: e.target.value })}
+                    />
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" onClick={saveEditPopular} className="text-xs gap-1">
+                        <Check className="h-3.5 w-3.5" /> Save Card
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => setEditingPopId(null)} className="text-xs gap-1">
+                        <X className="h-3.5 w-3.5" /> Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <img
+                        src={card.imageUrl}
+                        alt={card.title}
+                        className="h-14 w-16 rounded-xl object-cover bg-slate-100 shrink-0"
+                      />
+                      <div className="min-w-0">
+                        <p className={`text-sm font-bold truncate ${!card.isActive ? 'line-through text-slate-400' : 'text-slate-900'}`}>
+                          {card.title}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          {card.subtitle} • {card.eta}
+                        </p>
+                        <p className="text-[11px] text-[#11574A] truncate">{card.presetText}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 px-2"
+                        onClick={() => portalConfigService.updatePopularService(card.id, { isActive: !card.isActive })}
+                      >
+                        {card.isActive ? <Eye className="h-3.5 w-3.5 text-emerald-600" /> : <EyeOff className="h-3.5 w-3.5 text-slate-400" />}
+                      </Button>
+                      <Button size="sm" variant="ghost" className="h-7 px-2" onClick={() => startEditPopular(card)}>
+                        <Edit2 className="h-3.5 w-3.5 text-slate-600" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 px-2 text-rose-600 hover:bg-rose-50"
+                        onClick={() => portalConfigService.deletePopularService(card.id)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* TAB: DELIVERABLE ITEMS (WITH FULL INLINE EDIT) */}
       {activeTab === 'items' && (
         <div className="space-y-5">
-          {/* Add New Deliverable Item Form */}
           <Card className="p-5 bg-white space-y-4">
             <h2 className="text-sm font-bold text-slate-900">Add Deliverable / Orderable Item</h2>
             <form onSubmit={handleAddItem} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 items-end">
@@ -333,7 +858,6 @@ export const PortalConfigPage: React.FC = () => {
             </form>
           </Card>
 
-          {/* Filter & Table */}
           <Card className="p-5 bg-white space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 className="text-sm font-bold text-slate-900">Active Deliverable Items Catalog</h2>
@@ -351,45 +875,116 @@ export const PortalConfigPage: React.FC = () => {
 
             <div className="divide-y divide-slate-100">
               {filteredItems.map(item => (
-                <div key={item.id} className="flex items-center justify-between py-2.5 gap-3 text-xs">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase text-slate-600 shrink-0">
-                      {CATEGORY_OPTIONS.find(c => c.value === item.categoryCode)?.label || item.categoryCode}
-                    </span>
-                    <div className="min-w-0">
-                      <p className={`font-semibold truncate ${item.isActive === false ? 'line-through text-slate-400' : 'text-slate-900'}`}>
-                        {item.name}
-                      </p>
-                      <p className="text-[11px] text-slate-400">
-                        Unit: {item.unit || 'item'} • Max Qty: {item.maxQty || 6}
-                        {item.priceLabel ? ` • ${item.priceLabel}` : ''}
-                      </p>
+                <div key={item.id} className="py-2.5 text-xs">
+                  {editingItemId === item.id ? (
+                    <div className="space-y-2.5 bg-[#F6F8F8] p-3 rounded-xl">
+                      <div className="grid grid-cols-1 sm:grid-cols-5 gap-2">
+                        <div>
+                          <label className="block text-[11px] font-medium text-slate-600 mb-1">Section</label>
+                          <select
+                            value={editItemForm.categoryCode}
+                            onChange={e =>
+                              setEditItemForm({ ...editItemForm, categoryCode: e.target.value as CategoryCode })
+                            }
+                            className="w-full h-9 rounded-lg border border-slate-300 bg-white px-2 text-xs"
+                          >
+                            {CATEGORY_OPTIONS.map(c => (
+                              <option key={c.value} value={c.value}>{c.label}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="sm:col-span-2">
+                          <Input
+                            label="Item Name"
+                            value={editItemForm.name}
+                            onChange={e => setEditItemForm({ ...editItemForm, name: e.target.value })}
+                          />
+                        </div>
+                        <Input
+                          label="Unit"
+                          value={editItemForm.unit}
+                          onChange={e => setEditItemForm({ ...editItemForm, unit: e.target.value })}
+                        />
+                        <Input
+                          label="Max Qty"
+                          type="number"
+                          min={1}
+                          max={20}
+                          value={editItemForm.maxQty}
+                          onChange={e => setEditItemForm({ ...editItemForm, maxQty: Number(e.target.value) })}
+                        />
+                      </div>
+                      <div className="flex flex-wrap items-end justify-between gap-2">
+                        <div className="w-full sm:w-64">
+                          <Input
+                            label="Price / Note Label (optional)"
+                            placeholder="e.g. Free, Standard rate, 50 ETB"
+                            value={editItemForm.priceLabel}
+                            onChange={e => setEditItemForm({ ...editItemForm, priceLabel: e.target.value })}
+                          />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button size="sm" onClick={saveEditItem} className="text-xs gap-1">
+                            <Check className="h-3.5 w-3.5" /> Save
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => setEditingItemId(null)} className="text-xs gap-1">
+                            <X className="h-3.5 w-3.5" /> Cancel
+                          </Button>
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase text-slate-600 shrink-0">
+                          {CATEGORY_OPTIONS.find(c => c.value === item.categoryCode)?.label || item.categoryCode}
+                        </span>
+                        <div className="min-w-0">
+                          <p className={`font-semibold truncate ${item.isActive === false ? 'line-through text-slate-400' : 'text-slate-900'}`}>
+                            {item.name}
+                          </p>
+                          <p className="text-[11px] text-slate-400">
+                            Unit: {item.unit || 'item'} • Max Qty: {item.maxQty || 6}
+                            {item.priceLabel ? ` • ${item.priceLabel}` : ''}
+                          </p>
+                        </div>
+                      </div>
 
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 px-2 text-xs"
-                      onClick={() =>
-                        portalConfigService.updateDeliverableItem(item.id, {
-                          isActive: item.isActive === false,
-                        })
-                      }
-                      title={item.isActive === false ? 'Show on Guest Portal' : 'Hide from Guest Portal'}
-                    >
-                      {item.isActive === false ? <EyeOff className="h-3.5 w-3.5 text-slate-400" /> : <Eye className="h-3.5 w-3.5 text-emerald-600" />}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 px-2 text-rose-600 hover:bg-rose-50"
-                      onClick={() => portalConfigService.deleteDeliverableItem(item.id)}
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 px-2 text-xs"
+                          onClick={() =>
+                            portalConfigService.updateDeliverableItem(item.id, {
+                              isActive: item.isActive === false,
+                            })
+                          }
+                          title={item.isActive === false ? 'Show on Guest Portal' : 'Hide from Guest Portal'}
+                        >
+                          {item.isActive === false ? <EyeOff className="h-3.5 w-3.5 text-slate-400" /> : <Eye className="h-3.5 w-3.5 text-emerald-600" />}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 px-2"
+                          onClick={() => startEditItem(item)}
+                          title="Edit Item"
+                        >
+                          <Edit2 className="h-3.5 w-3.5 text-slate-600" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 px-2 text-rose-600 hover:bg-rose-50"
+                          onClick={() => portalConfigService.deleteDeliverableItem(item.id)}
+                          title="Delete Item"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -397,7 +992,7 @@ export const PortalConfigPage: React.FC = () => {
         </div>
       )}
 
-      {/* TAB 2: FAQs */}
+      {/* TAB: FAQs */}
       {activeTab === 'faqs' && (
         <div className="space-y-5">
           <Card className="p-5 bg-white space-y-4">
@@ -479,54 +1074,54 @@ export const PortalConfigPage: React.FC = () => {
         </div>
       )}
 
-      {/* TAB 3: LOCAL SERVICE PROVIDERS */}
+      {/* TAB: LOCAL DIRECTORY & RIDE NUMBERS */}
       {activeTab === 'providers' && (
         <div className="space-y-5">
           <Card className="p-5 bg-white space-y-4">
-            <h2 className="text-sm font-bold text-slate-900">Add Local Shop / Service Provider</h2>
+            <h2 className="text-sm font-bold text-slate-900">Add Local Shop / Ride / Delivery Contact</h2>
             <form onSubmit={handleAddProvider} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               <Input
-                label="Shop / Provider Name"
-                placeholder="e.g. Corner 24/7 Mini Market"
+                label="Shop / Service Name"
+                placeholder="e.g. RIDE Taxi, Corner Mini Market"
                 value={newProvName}
                 onChange={e => setNewProvName(e.target.value)}
                 required
               />
               <Input
                 label="Category"
-                placeholder="e.g. Coffee, Tea & Snacks"
+                placeholder="e.g. Ride & Taxi, Coffee & Tea, Food & Meals"
                 value={newProvCat}
                 onChange={e => setNewProvCat(e.target.value)}
               />
               <Input
                 label="Opening Hours"
-                placeholder="e.g. Open 24/7"
+                placeholder="e.g. 24/7 or 8:00 AM – 10:00 PM"
                 value={newProvHours}
                 onChange={e => setNewProvHours(e.target.value)}
               />
               <Input
-                label="Phone Number"
-                placeholder="+1 (555) 210-4411"
+                label="Dial / Phone Number"
+                placeholder="e.g. 8294 or +251 911 234 567"
                 value={newProvPhone}
                 onChange={e => setNewProvPhone(e.target.value)}
                 required
               />
               <Input
                 label="WhatsApp Number (optional)"
-                placeholder="+15552104411"
+                placeholder="+251911234567"
                 value={newProvWhatsapp}
                 onChange={e => setNewProvWhatsapp(e.target.value)}
               />
               <Input
                 label="What They Supply"
-                placeholder="Cards, cigarettes, water, coffee, food..."
+                placeholder="Cards, water, coffee, traditional meals..."
                 value={newProvDesc}
                 onChange={e => setNewProvDesc(e.target.value)}
               />
               <div className="sm:col-span-2 lg:col-span-3 pt-1">
                 <Button type="submit" size="sm" className="gap-1.5 text-xs">
                   <Plus className="h-3.5 w-3.5" />
-                  <span>Add Service Provider</span>
+                  <span>Add Directory Contact</span>
                 </Button>
               </div>
             </form>
@@ -590,7 +1185,7 @@ export const PortalConfigPage: React.FC = () => {
                         <h3 className={`text-sm font-bold ${!p.isActive ? 'line-through text-slate-400' : 'text-slate-900'}`}>
                           {p.name}
                         </h3>
-                        <p className="text-xs font-medium text-teal-700">{p.category} • {p.hours}</p>
+                        <p className="text-xs font-medium text-[#11574A]">{p.category} • {p.hours}</p>
                       </div>
                       <div className="flex items-center gap-1">
                         <Button
@@ -607,7 +1202,7 @@ export const PortalConfigPage: React.FC = () => {
                           variant="ghost"
                           className="h-7 px-2"
                           onClick={() => startEditProvider(p)}
-                          title="Edit Provider"
+                          title="Edit Contact"
                         >
                           <Edit2 className="h-3.5 w-3.5 text-slate-600" />
                         </Button>
@@ -616,7 +1211,7 @@ export const PortalConfigPage: React.FC = () => {
                           variant="ghost"
                           className="h-7 px-2 text-rose-600 hover:bg-rose-50"
                           onClick={() => portalConfigService.deleteProvider(p.id)}
-                          title="Delete Provider"
+                          title="Delete Contact"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
@@ -634,7 +1229,7 @@ export const PortalConfigPage: React.FC = () => {
         </div>
       )}
 
-      {/* TAB 4: QUICK REQUEST PRESETS */}
+      {/* TAB: QUICK REQUEST PRESETS (WITH INLINE EDIT + VISIBILITY TOGGLE) */}
       {activeTab === 'presets' && (
         <div className="space-y-5">
           <Card className="p-5 bg-white space-y-4">
@@ -671,21 +1266,73 @@ export const PortalConfigPage: React.FC = () => {
               <p className="text-xs font-semibold text-slate-500">
                 Current presets for {CATEGORY_OPTIONS.find(c => c.value === presetCat)?.label}:
               </p>
-              <div className="flex flex-wrap gap-2">
+              <div className="divide-y divide-slate-100 rounded-xl border border-slate-200/70 overflow-hidden">
                 {filteredPresets.map(pre => (
-                  <span
-                    key={pre.id}
-                    className="inline-flex items-center gap-2 rounded-xl bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-800"
-                  >
-                    <span>{pre.label}</span>
-                    <button
-                      type="button"
-                      onClick={() => portalConfigService.deletePreset(pre.id)}
-                      className="text-slate-400 hover:text-rose-600"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  </span>
+                  <div key={pre.id} className="flex items-center justify-between gap-2 px-3 py-2 bg-white text-xs">
+                    {editingPresetId === pre.id ? (
+                      <div className="flex items-center gap-2 flex-1">
+                        <input
+                          type="text"
+                          value={editPresetLabel}
+                          onChange={e => setEditPresetLabel(e.target.value)}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter') saveEditPreset();
+                          }}
+                          className="flex-1 rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs focus:border-[#11574A] focus:outline-none"
+                        />
+                        <Button size="sm" onClick={saveEditPreset} className="h-7 px-2.5 text-xs">
+                          <Check className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setEditingPresetId(null)}
+                          className="h-7 px-2.5 text-xs"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <>
+                        <span className={!pre.isActive ? 'line-through text-slate-400' : 'text-slate-800 font-medium'}>
+                          {pre.label}
+                        </span>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => portalConfigService.updatePreset(pre.id, { isActive: !pre.isActive })}
+                            className="p-1.5 rounded-lg hover:bg-slate-100"
+                            title={pre.isActive ? 'Hide preset' : 'Show preset'}
+                          >
+                            {pre.isActive ? (
+                              <Eye className="h-3.5 w-3.5 text-emerald-600" />
+                            ) : (
+                              <EyeOff className="h-3.5 w-3.5 text-slate-400" />
+                            )}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingPresetId(pre.id);
+                              setEditPresetLabel(pre.label);
+                            }}
+                            className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-600"
+                            title="Edit preset"
+                          >
+                            <Edit2 className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => portalConfigService.deletePreset(pre.id)}
+                            className="p-1.5 rounded-lg hover:bg-rose-50 text-rose-600"
+                            title="Delete preset"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
                 ))}
               </div>
             </div>
@@ -695,4 +1342,3 @@ export const PortalConfigPage: React.FC = () => {
     </div>
   );
 };
-

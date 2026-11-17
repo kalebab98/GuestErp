@@ -1,60 +1,17 @@
 import React from 'react';
 import { Clock, ChevronRight } from 'lucide-react';
+import { PopularServiceConfig } from '@/features/config/portalConfigService';
 
-export interface PopularServiceItem {
-  id: string;
-  title: string;
-  subtitle: string;
-  eta: string;
-  categoryCode: string;
-  presetText: string;
-  imageUrl: string;
-}
-
-export const POPULAR_SERVICES: PopularServiceItem[] = [
-  {
-    id: 'pop-towels',
-    title: 'Fresh Towels & Linens',
-    subtitle: 'Housekeeping',
-    eta: '~20 min',
-    categoryCode: 'housekeeping',
-    presetText: 'Fresh towel replacement',
-    imageUrl: 'https://images.unsplash.com/photo-1616046229478-9901c5536a45?auto=format&fit=crop&w=600&q=80',
-  },
-  {
-    id: 'pop-laundry',
-    title: 'Laundry Pickup',
-    subtitle: 'Laundry',
-    eta: '~30 min',
-    categoryCode: 'laundry',
-    presetText: 'Pickup laundry bag for wash & fold',
-    imageUrl: 'https://images.unsplash.com/photo-1582735689369-4fe89db7114c?auto=format&fit=crop&w=600&q=80',
-  },
-  {
-    id: 'pop-shop',
-    title: 'Coffee, Tea & Shop',
-    subtitle: 'Shop & Delivery',
-    eta: '~25 min',
-    categoryCode: 'shop_delivery',
-    presetText: 'Order fresh coffee or tea to apartment',
-    imageUrl: 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=600&q=80',
-  },
-  {
-    id: 'pop-checkout',
-    title: 'Late Check-out',
-    subtitle: 'Front Desk',
-    eta: 'Quick reply',
-    categoryCode: 'guest_services',
-    presetText: 'Request late check-out',
-    imageUrl: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=600&q=80',
-  },
-];
+export type PopularServiceItem = PopularServiceConfig;
 
 interface PopularServicesRowProps {
+  items: PopularServiceItem[];
   onSelectPopular: (item: PopularServiceItem) => void;
 }
 
-export const PopularServicesRow: React.FC<PopularServicesRowProps> = ({ onSelectPopular }) => {
+export const PopularServicesRow: React.FC<PopularServicesRowProps> = ({ items, onSelectPopular }) => {
+  if (!items || items.length === 0) return null;
+
   return (
     <section className="space-y-4 text-left">
       <div className="flex items-center justify-between">
@@ -66,7 +23,7 @@ export const PopularServicesRow: React.FC<PopularServicesRowProps> = ({ onSelect
 
       {/* Responsive Grid: 2 cols mobile, 4 cols tablet/PC */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        {POPULAR_SERVICES.map(item => (
+        {items.map(item => (
           <button
             key={item.id}
             type="button"

@@ -1,7 +1,15 @@
-// Mock PMS Adapter Implementation
-// 16-Apartment Building: 1A, 1B, 2A, 2B, 3A, 3B, 4A, 4B, 5A, 5B, 6A, 6B, 7A, 7B, 8A, 8B + Ground Floor Medical Store
+// Editable Property & Stay Manager (PMS Adapter Implementation)
+// 16-Apartment Building: 1A, 1B, 2A, 2B, 3A, 3B, 4A, 4B, 5A, 5B, 6A, 6B, 7A, 7B, 8A, 8B
+// + Ground Floor Medical Store
+// All apartment labels, guest names, contact details, dates, and stay statuses are editable
+// from the Staff Command Center and synced live to Supabase `guestcare.settings`.
 
-import { IPMSAdapter, PMSApartment, PMSReservation, PMSEligibilityResult } from '@/types/pms';
+import { IPMSAdapter, PMSApartment, PMSReservation, PMSEligibilityResult, PMSStayStatus } from '@/types/pms';
+import {
+  fetchAllSettingsFromSupabase,
+  upsertSettingToSupabase,
+  subscribeToGuestCareRealtime,
+} from '@/lib/supabaseSync';
 
 export const BUILDING_INFO = {
   totalApartments: 16,
@@ -29,17 +37,13 @@ export const BUILDING_16_APARTMENTS: PMSApartment[] = [1, 2, 3, 4, 5, 6, 7, 8].f
   },
 ]);
 
-export class MockPMSAdapter implements IPMSAdapter {
-  readonly adapterName = 'MockPMSAdapter (16 Apartments: 1A–8B)';
-  readonly isMock = true;
-
-  private apartments: PMSApartment[] = [...BUILDING_16_APARTMENTS];
-
-  private reservations: PMSReservation[] = [
+function createDefaultReservations(apartments: PMSApartment[]): PMSReservation[] {
+  const findApt = (unit: string) => apartments.find(a => a.unitNumber === unit)!;
+  return [
     {
       id: 'RES-89211',
       apartmentId: 'apt-1a',
-      apartment: BUILDING_16_APARTMENTS.find(a => a.unitNumber === '1A')!,
+      apartment: findApt('1A'),
       primaryGuest: {
         id: 'gst-1001',
         firstName: 'Sarah',
@@ -60,7 +64,7 @@ export class MockPMSAdapter implements IPMSAdapter {
     {
       id: 'RES-89212',
       apartmentId: 'apt-1b',
-      apartment: BUILDING_16_APARTMENTS.find(a => a.unitNumber === '1B')!,
+      apartment: findApt('1B'),
       primaryGuest: {
         id: 'gst-1002',
         firstName: 'David',
@@ -80,7 +84,7 @@ export class MockPMSAdapter implements IPMSAdapter {
     {
       id: 'RES-89213',
       apartmentId: 'apt-2a',
-      apartment: BUILDING_16_APARTMENTS.find(a => a.unitNumber === '2A')!,
+      apartment: findApt('2A'),
       primaryGuest: {
         id: 'gst-1003',
         firstName: 'Elena',
@@ -101,7 +105,7 @@ export class MockPMSAdapter implements IPMSAdapter {
     {
       id: 'RES-89214',
       apartmentId: 'apt-2b',
-      apartment: BUILDING_16_APARTMENTS.find(a => a.unitNumber === '2B')!,
+      apartment: findApt('2B'),
       primaryGuest: {
         id: 'gst-1004',
         firstName: 'Michael',
@@ -121,7 +125,7 @@ export class MockPMSAdapter implements IPMSAdapter {
     {
       id: 'RES-89215',
       apartmentId: 'apt-8b',
-      apartment: BUILDING_16_APARTMENTS.find(a => a.unitNumber === '8B')!,
+      apartment: findApt('8B'),
       primaryGuest: {
         id: 'gst-1005',
         firstName: 'Lucas',
@@ -138,33 +142,199 @@ export class MockPMSAdapter implements IPMSAdapter {
       createdAt: '2026-11-12T16:00:00Z',
       updatedAt: '2026-11-12T16:00:00Z',
     },
-    // Active reservations for all remaining apartments (3A through 8A)
-    ...BUILDING_16_APARTMENTS.filter(
-      a => !['1A', '1B', '2A', '2B', '8B'].includes(a.unitNumber)
-    ).map((apt, index) => ({
-      id: `RES-APT-${apt.unitNumber}`,
-      apartmentId: apt.id,
-      apartment: apt,
-      primaryGuest: {
-        id: `gst-apt-${apt.unitNumber}`,
-        firstName: 'Guest',
-        lastName: `Apt ${apt.unitNumber}`,
-        fullName: `Apartment ${apt.unitNumber} Guest`,
-        email: `apt${apt.unitNumber.toLowerCase()}@guest.residence`,
-        phone: `+251 911 000 ${String(100 + index).slice(-3)}`,
-      },
-      checkInDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-      checkOutDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-      stayStatus: 'checked_in' as const,
-      adultsCount: 2,
-      childrenCount: 0,
-      createdAt: '2026-11-15T10:00:00Z',
-      updatedAt: '2026-11-16T10:00:00Z',
-    })),
+    ...apartments
+      .filter(a => !['1A', '1B', '2A', '2B', '8B'].includes(a.unitNumber))
+      .map((apt, index) => ({
+        id: `RES-APT-${apt.unitNumber}`,
+        apartmentId: apt.id,
+        apartment: apt,
+        primaryGuest: {
+          id: `gst-apt-${apt.unitNumber}`,
+          firstName: 'Guest',
+          lastName: `Apt ${apt.unitNumber}`,
+          fullName: `Apartment ${apt.unitNumber} Guest`,
+          email: `apt${apt.unitNumber.toLowerCase()}@guest.residence`,
+          phone: `+251 911 000 ${String(100 + index).slice(-3)}`,
+        },
+        checkInDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+        checkOutDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+        stayStatus: 'checked_in' as const,
+        adultsCount: 2,
+        childrenCount: 0,
+        createdAt: '2026-11-15T10:00:00Z',
+        updatedAt: '2026-11-16T10:00:00Z',
+      })),
   ];
+}
+
+const STORAGE_KEY_APARTMENTS = 'guestcare_pms_apartments_v1';
+const STORAGE_KEY_RESERVATIONS = 'guestcare_pms_reservations_v1';
+
+function loadLocal<T>(key: string, fallback: T): T {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      const raw = localStorage.getItem(key);
+      if (raw) return JSON.parse(raw);
+    }
+  } catch {
+    // Ignore storage errors in tests
+  }
+  return fallback;
+}
+
+function saveLocal<T>(key: string, value: T): void {
+  try {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(key, JSON.stringify(value));
+    }
+  } catch {
+    // Ignore
+  }
+}
+
+export interface ApartmentStayUpdateInput {
+  apartmentName?: string;
+  guestName?: string;
+  guestEmail?: string;
+  guestPhone?: string;
+  stayStatus?: PMSStayStatus;
+  checkInDate?: string;
+  checkOutDate?: string;
+}
+
+export class MockPMSAdapter implements IPMSAdapter {
+  readonly adapterName = 'GuestCare Building PMS (16 Apartments: 1A–8B)';
+  readonly isMock = true;
+
+  private apartments: PMSApartment[] = loadLocal(
+    STORAGE_KEY_APARTMENTS,
+    BUILDING_16_APARTMENTS.map(a => ({ ...a }))
+  );
+
+  private reservations: PMSReservation[] = loadLocal(
+    STORAGE_KEY_RESERVATIONS,
+    createDefaultReservations(this.apartments)
+  );
+
+  private listeners: Array<() => void> = [];
+
+  constructor() {
+    void this.syncFromSupabase();
+    subscribeToGuestCareRealtime(() => {
+      void this.syncFromSupabase();
+    });
+  }
+
+  subscribe(listener: () => void): () => void {
+    this.listeners.push(listener);
+    return () => {
+      this.listeners = this.listeners.filter(l => l !== listener);
+    };
+  }
+
+  private emit(): void {
+    saveLocal(STORAGE_KEY_APARTMENTS, this.apartments);
+    saveLocal(STORAGE_KEY_RESERVATIONS, this.reservations);
+    void upsertSettingToSupabase(
+      'building_apartments_stays',
+      { apartments: this.apartments, reservations: this.reservations },
+      'Editable 16-apartment directory and guest stay assignments'
+    );
+    this.listeners.forEach(l => l());
+  }
+
+  async syncFromSupabase(): Promise<void> {
+    const remote = await fetchAllSettingsFromSupabase();
+    if (!remote || !remote.building_apartments_stays) return;
+    const payload = remote.building_apartments_stays;
+    let changed = false;
+    if (Array.isArray(payload.apartments) && payload.apartments.length > 0) {
+      this.apartments = payload.apartments;
+      changed = true;
+    }
+    if (Array.isArray(payload.reservations) && payload.reservations.length > 0) {
+      this.reservations = payload.reservations;
+      changed = true;
+    }
+    if (changed) {
+      saveLocal(STORAGE_KEY_APARTMENTS, this.apartments);
+      saveLocal(STORAGE_KEY_RESERVATIONS, this.reservations);
+      this.listeners.forEach(l => l());
+    }
+  }
+
+  /**
+   * Allows Staff Command Center to edit any apartment name, guest name/phone/email,
+   * stay status, and check-in/check-out dates — immediately synced to Supabase.
+   */
+  updateApartmentStay(unitNumber: string, patch: ApartmentStayUpdateInput): void {
+    const normalized = unitNumber.trim().toUpperCase();
+    const aptIdx = this.apartments.findIndex(a => a.unitNumber.toUpperCase() === normalized);
+    if (aptIdx === -1) return;
+
+    if (patch.apartmentName && patch.apartmentName.trim()) {
+      this.apartments[aptIdx] = {
+        ...this.apartments[aptIdx],
+        name: patch.apartmentName.trim(),
+      };
+    }
+
+    const updatedApt = this.apartments[aptIdx];
+    const resIdx = this.reservations.findIndex(
+      r => r.apartment.unitNumber.toUpperCase() === normalized
+    );
+
+    const now = new Date().toISOString();
+    const fullName = patch.guestName?.trim();
+    const [firstName, ...rest] = (fullName || `Apartment ${normalized} Guest`).split(' ');
+    const lastName = rest.join(' ') || '';
+
+    if (resIdx >= 0) {
+      const existing = this.reservations[resIdx];
+      this.reservations[resIdx] = {
+        ...existing,
+        apartment: updatedApt,
+        primaryGuest: {
+          ...existing.primaryGuest,
+          firstName: fullName ? firstName : existing.primaryGuest.firstName,
+          lastName: fullName ? lastName : existing.primaryGuest.lastName,
+          fullName: fullName || existing.primaryGuest.fullName,
+          email: patch.guestEmail !== undefined ? patch.guestEmail.trim() : existing.primaryGuest.email,
+          phone: patch.guestPhone !== undefined ? patch.guestPhone.trim() : existing.primaryGuest.phone,
+        },
+        stayStatus: patch.stayStatus || existing.stayStatus,
+        checkInDate: patch.checkInDate || existing.checkInDate,
+        checkOutDate: patch.checkOutDate || existing.checkOutDate,
+        updatedAt: now,
+      };
+    } else {
+      this.reservations.push({
+        id: `RES-APT-${normalized}`,
+        apartmentId: updatedApt.id,
+        apartment: updatedApt,
+        primaryGuest: {
+          id: `gst-apt-${normalized}`,
+          firstName,
+          lastName,
+          fullName: fullName || `Apartment ${normalized} Guest`,
+          email: patch.guestEmail?.trim() || '',
+          phone: patch.guestPhone?.trim() || '',
+        },
+        checkInDate: patch.checkInDate || now,
+        checkOutDate: patch.checkOutDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        stayStatus: patch.stayStatus || 'checked_in',
+        adultsCount: 2,
+        childrenCount: 0,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+
+    this.emit();
+  }
 
   listAllBuildingApartments(): PMSApartment[] {
-    return BUILDING_16_APARTMENTS.map(a => ({ ...a }));
+    return this.apartments.map(a => ({ ...a }));
   }
 
   async getReservation(reservationId: string): Promise<PMSReservation | null> {

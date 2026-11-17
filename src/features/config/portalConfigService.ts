@@ -1,10 +1,15 @@
-// Portal Content, Contact Numbers & Catalog Configuration Service
-// Everything shown on the Guest Portal & Building Directory (Wi-Fi, Phone Numbers,
-// Medical Store Info, FAQs, Deliverable Items, Presets, and Local Directory)
-// is 100% editable from the Staff Command Center.
+// Portal Content, Branding, Contact Numbers & Catalog Configuration Service
+// Everything shown on the Guest Portal & Building Directory (Branding, Hero Text, Notice Banner,
+// Wi-Fi, Phone Numbers, Medical Store Info, Service Categories, Popular Cards, FAQs,
+// Deliverable Items, Presets, and Local Directory) is 100% editable from the Staff Command Center
+// and synced live to Supabase `guestcare.settings`.
 
 import { CategoryCode, FAQItem, LocalServiceProvider, PresetServiceItem } from '@/types/guestcare';
-import { fetchAllSettingsFromSupabase, upsertSettingToSupabase } from '@/lib/supabaseSync';
+import {
+  fetchAllSettingsFromSupabase,
+  upsertSettingToSupabase,
+  subscribeToGuestCareRealtime,
+} from '@/lib/supabaseSync';
 
 const STORAGE_KEYS = {
   FAQS: 'guestcare_config_faqs_v3',
@@ -13,6 +18,9 @@ const STORAGE_KEYS = {
   PROVIDERS: 'guestcare_config_providers_v5',
   WIFI: 'guestcare_config_wifi_v3',
   CONTACT: 'guestcare_config_contact_v1',
+  BRANDING: 'guestcare_config_branding_v1',
+  POPULAR: 'guestcare_config_popular_v1',
+  CATEGORIES: 'guestcare_config_categories_v1',
 };
 
 export interface CategoryPreset {
@@ -25,6 +33,37 @@ export interface CategoryPreset {
 export interface WifiConfig {
   networkName: string;
   password: string;
+}
+
+export interface PortalBrandingConfig {
+  portalBrandName: string;
+  heroHeadline: string;
+  heroSubtitle: string;
+  heroCtaLabel: string;
+  directorySectionTitle: string;
+  directoryCardTitle: string;
+  directoryCardDescription: string;
+  noticeBanner: string;
+}
+
+export interface PopularServiceConfig {
+  id: string;
+  title: string;
+  subtitle: string;
+  eta: string;
+  categoryCode: CategoryCode;
+  presetText: string;
+  imageUrl: string;
+  isActive: boolean;
+}
+
+export interface CategoryOverride {
+  name?: string;
+  shortName?: string;
+  tagline?: string;
+  description?: string;
+  slaMinutes?: number;
+  isActive?: boolean;
 }
 
 export interface ContactAndBuildingConfig {
@@ -47,6 +86,66 @@ const DEFAULT_WIFI: WifiConfig = {
   password: 'residenceguest',
 };
 
+const DEFAULT_BRANDING: PortalBrandingConfig = {
+  portalBrandName: 'GuestCare',
+  heroHeadline: 'YOUR COMFORT, ONE TAP AWAY!',
+  heroSubtitle:
+    'Request housekeeping, laundry, maintenance, or order coffee, food, and everyday essentials right to your door.',
+  heroCtaLabel: 'Explore Services',
+  directorySectionTitle: 'Local Shops, Food & Ride Numbers',
+  directoryCardTitle: 'Quick Dial — Ride, Food, Coffee & Shops',
+  directoryCardDescription:
+    'Direct dial numbers for Ethiopia rides (RIDE 8294, Feres 6090), ground floor medical store, mini-markets, coffee & meals.',
+  noticeBanner: '',
+};
+
+const DEFAULT_POPULAR_SERVICES: PopularServiceConfig[] = [
+  {
+    id: 'pop-towels',
+    title: 'Fresh Towels & Linens',
+    subtitle: 'Housekeeping',
+    eta: '~20 min',
+    categoryCode: 'housekeeping',
+    presetText: 'Fresh towel replacement',
+    imageUrl:
+      'https://images.unsplash.com/photo-1616046229478-9901c5536a45?auto=format&fit=crop&w=600&q=80',
+    isActive: true,
+  },
+  {
+    id: 'pop-laundry',
+    title: 'Laundry Pickup',
+    subtitle: 'Laundry',
+    eta: '~30 min',
+    categoryCode: 'laundry',
+    presetText: 'Pickup laundry bag for wash & fold',
+    imageUrl:
+      'https://images.unsplash.com/photo-1582735689369-4fe89db7114c?auto=format&fit=crop&w=600&q=80',
+    isActive: true,
+  },
+  {
+    id: 'pop-shop',
+    title: 'Coffee, Tea & Shop',
+    subtitle: 'Shop & Delivery',
+    eta: '~25 min',
+    categoryCode: 'shop_delivery',
+    presetText: 'Order fresh coffee or tea to apartment',
+    imageUrl:
+      'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=600&q=80',
+    isActive: true,
+  },
+  {
+    id: 'pop-checkout',
+    title: 'Late Check-out',
+    subtitle: 'Front Desk',
+    eta: 'Quick reply',
+    categoryCode: 'guest_services',
+    presetText: 'Request late check-out',
+    imageUrl:
+      'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=600&q=80',
+    isActive: true,
+  },
+];
+
 const DEFAULT_CONTACT: ContactAndBuildingConfig = {
   propertyName: 'GuestCare Residences',
   frontDeskPhone: '+251 911 000 000',
@@ -54,7 +153,8 @@ const DEFAULT_CONTACT: ContactAndBuildingConfig = {
   medicalStoreName: 'Ground Floor Medical Store',
   medicalStorePhone: '+251 911 550 100',
   medicalStoreHours: '8:00 AM – 10:00 PM Daily',
-  medicalStoreDescription: 'Located on the ground floor of this building for medicines, prescriptions, first-aid, and health essentials.',
+  medicalStoreDescription:
+    'Located on the ground floor of this building for medicines, prescriptions, first-aid, and health essentials.',
   slaUrgentMinutes: 15,
   slaHighMinutes: 45,
   slaMediumMinutes: 120,
@@ -66,25 +166,29 @@ const DEFAULT_FAQS: FAQItem[] = [
   {
     id: 'faq-1',
     question: 'What time is standard check-out?',
-    answer: 'Standard check-out is 11:00 AM. If you need extra time, select "Front Desk" and request a late check-out.',
+    answer:
+      'Standard check-out is 11:00 AM. If you need extra time, select "Front Desk" and request a late check-out.',
     isActive: true,
   },
   {
     id: 'faq-2',
     question: 'How do I connect to the apartment Wi-Fi?',
-    answer: 'The Wi-Fi network name and password are shown right at the top of your Guest Portal with a one-tap Copy button.',
+    answer:
+      'The Wi-Fi network name and password are shown right at the top of your Guest Portal with a one-tap Copy button.',
     isActive: true,
   },
   {
     id: 'faq-3',
     question: 'How does Laundry service work?',
-    answer: 'Place your clothes in the laundry bag inside the wardrobe and submit a Laundry request. Same-day wash & fold pickup is available before 10:00 AM.',
+    answer:
+      'Place your clothes in the laundry bag inside the wardrobe and submit a Laundry request. Same-day wash & fold pickup is available before 10:00 AM.',
     isActive: true,
   },
   {
     id: 'faq-4',
     question: 'How do I get a taxi or order food, coffee, or SIM cards?',
-    answer: 'Open the "Local Shops, Food & Ride Numbers" card to call RIDE (8294), Feres (6090), or local shops directly — or place a "Shop & Delivery" request for Front Desk delivery.',
+    answer:
+      'Open the "Local Shops, Food & Ride Numbers" card to call RIDE (8294), Feres (6090), or local shops directly — or place a "Shop & Delivery" request for Front Desk delivery.',
     isActive: true,
   },
   {
@@ -266,10 +370,19 @@ class PortalConfigService {
   private providers: LocalServiceProvider[] = load(STORAGE_KEYS.PROVIDERS, DEFAULT_PROVIDERS);
   private wifi: WifiConfig = load(STORAGE_KEYS.WIFI, DEFAULT_WIFI);
   private contact: ContactAndBuildingConfig = load(STORAGE_KEYS.CONTACT, DEFAULT_CONTACT);
+  private branding: PortalBrandingConfig = load(STORAGE_KEYS.BRANDING, DEFAULT_BRANDING);
+  private popularServices: PopularServiceConfig[] = load(STORAGE_KEYS.POPULAR, DEFAULT_POPULAR_SERVICES);
+  private categoryOverrides: Partial<Record<CategoryCode, CategoryOverride>> = load(
+    STORAGE_KEYS.CATEGORIES,
+    {}
+  );
   private listeners: Array<() => void> = [];
 
   constructor() {
-    this.syncFromSupabase();
+    void this.syncFromSupabase();
+    subscribeToGuestCareRealtime(() => {
+      void this.syncFromSupabase();
+    });
   }
 
   async syncFromSupabase(): Promise<void> {
@@ -300,15 +413,34 @@ class PortalConfigService {
       this.contact = { ...this.contact, ...remote.contact_info };
       changed = true;
     }
+    if (remote.portal_branding && typeof remote.portal_branding === 'object') {
+      this.branding = { ...this.branding, ...remote.portal_branding };
+      changed = true;
+    }
+    if (Array.isArray(remote.portal_popular_services)) {
+      this.popularServices = remote.portal_popular_services;
+      changed = true;
+    }
+    if (remote.portal_category_overrides && typeof remote.portal_category_overrides === 'object') {
+      this.categoryOverrides = remote.portal_category_overrides;
+      changed = true;
+    }
     if (changed) {
-      save(STORAGE_KEYS.FAQS, this.faqs);
-      save(STORAGE_KEYS.ITEMS, this.items);
-      save(STORAGE_KEYS.PRESETS, this.presets);
-      save(STORAGE_KEYS.PROVIDERS, this.providers);
-      save(STORAGE_KEYS.WIFI, this.wifi);
-      save(STORAGE_KEYS.CONTACT, this.contact);
+      this.saveLocalOnly();
       this.listeners.forEach(l => l());
     }
+  }
+
+  private saveLocalOnly(): void {
+    save(STORAGE_KEYS.FAQS, this.faqs);
+    save(STORAGE_KEYS.ITEMS, this.items);
+    save(STORAGE_KEYS.PRESETS, this.presets);
+    save(STORAGE_KEYS.PROVIDERS, this.providers);
+    save(STORAGE_KEYS.WIFI, this.wifi);
+    save(STORAGE_KEYS.CONTACT, this.contact);
+    save(STORAGE_KEYS.BRANDING, this.branding);
+    save(STORAGE_KEYS.POPULAR, this.popularServices);
+    save(STORAGE_KEYS.CATEGORIES, this.categoryOverrides);
   }
 
   subscribe(listener: () => void): () => void {
@@ -318,23 +450,88 @@ class PortalConfigService {
     };
   }
 
-  private emit(): void {
-    save(STORAGE_KEYS.FAQS, this.faqs);
-    save(STORAGE_KEYS.ITEMS, this.items);
-    save(STORAGE_KEYS.PRESETS, this.presets);
-    save(STORAGE_KEYS.PROVIDERS, this.providers);
-    save(STORAGE_KEYS.WIFI, this.wifi);
-    save(STORAGE_KEYS.CONTACT, this.contact);
+  private emit(syncKey?: string): void {
+    this.saveLocalOnly();
 
     // Sync asynchronously to live Supabase `guestcare.settings`
-    void upsertSettingToSupabase('portal_faqs', this.faqs, 'Guest portal FAQs');
-    void upsertSettingToSupabase('portal_deliverable_items', this.items, 'Guest portal deliverable items');
-    void upsertSettingToSupabase('portal_presets', this.presets, 'Guest portal quick presets');
-    void upsertSettingToSupabase('portal_providers', this.providers, 'Local directory & Ethiopia ride numbers');
-    void upsertSettingToSupabase('wifi_config', this.wifi, 'Apartment Wi-Fi credentials');
-    void upsertSettingToSupabase('contact_info', this.contact, 'Building contact numbers & medical store info');
+    if (!syncKey || syncKey === 'portal_faqs') {
+      void upsertSettingToSupabase('portal_faqs', this.faqs, 'Guest portal FAQs');
+    }
+    if (!syncKey || syncKey === 'portal_deliverable_items') {
+      void upsertSettingToSupabase('portal_deliverable_items', this.items, 'Guest portal deliverable items');
+    }
+    if (!syncKey || syncKey === 'portal_presets') {
+      void upsertSettingToSupabase('portal_presets', this.presets, 'Guest portal quick presets');
+    }
+    if (!syncKey || syncKey === 'portal_providers') {
+      void upsertSettingToSupabase('portal_providers', this.providers, 'Local directory & Ethiopia ride numbers');
+    }
+    if (!syncKey || syncKey === 'wifi_config') {
+      void upsertSettingToSupabase('wifi_config', this.wifi, 'Apartment Wi-Fi credentials');
+    }
+    if (!syncKey || syncKey === 'contact_info') {
+      void upsertSettingToSupabase('contact_info', this.contact, 'Building contact numbers & medical store info');
+    }
+    if (!syncKey || syncKey === 'portal_branding') {
+      void upsertSettingToSupabase('portal_branding', this.branding, 'Guest portal hero text, branding & notices');
+    }
+    if (!syncKey || syncKey === 'portal_popular_services') {
+      void upsertSettingToSupabase('portal_popular_services', this.popularServices, 'Popular one-tap request cards');
+    }
+    if (!syncKey || syncKey === 'portal_category_overrides') {
+      void upsertSettingToSupabase('portal_category_overrides', this.categoryOverrides, 'Editable service category labels & visibility');
+    }
 
     this.listeners.forEach(l => l());
+  }
+
+  // --- Portal Branding, Hero & Directory Copy ---
+  getBranding(): PortalBrandingConfig {
+    return { ...this.branding };
+  }
+
+  updateBranding(patch: Partial<PortalBrandingConfig>): void {
+    this.branding = { ...this.branding, ...patch };
+    this.emit('portal_branding');
+  }
+
+  // --- Popular Request Cards ---
+  getPopularServices(onlyActive = false): PopularServiceConfig[] {
+    return onlyActive ? this.popularServices.filter(p => p.isActive) : [...this.popularServices];
+  }
+
+  addPopularService(input: Omit<PopularServiceConfig, 'id'>): PopularServiceConfig {
+    const item: PopularServiceConfig = {
+      ...input,
+      id: `pop-${Date.now()}`,
+      isActive: input.isActive !== false,
+    };
+    this.popularServices.push(item);
+    this.emit('portal_popular_services');
+    return item;
+  }
+
+  updatePopularService(id: string, patch: Partial<Omit<PopularServiceConfig, 'id'>>): void {
+    this.popularServices = this.popularServices.map(p => (p.id === id ? { ...p, ...patch } : p));
+    this.emit('portal_popular_services');
+  }
+
+  deletePopularService(id: string): void {
+    this.popularServices = this.popularServices.filter(p => p.id !== id);
+    this.emit('portal_popular_services');
+  }
+
+  // --- Service Category Overrides ---
+  getCategoryOverrides(): Partial<Record<CategoryCode, CategoryOverride>> {
+    return { ...this.categoryOverrides };
+  }
+
+  updateCategoryOverride(code: CategoryCode, patch: Partial<CategoryOverride>): void {
+    this.categoryOverrides = {
+      ...this.categoryOverrides,
+      [code]: { ...(this.categoryOverrides[code] || {}), ...patch },
+    };
+    this.emit('portal_category_overrides');
   }
 
   // --- Contact, Phone Numbers & Building Info ---
@@ -344,7 +541,21 @@ class PortalConfigService {
 
   updateContact(patch: Partial<ContactAndBuildingConfig>): void {
     this.contact = { ...this.contact, ...patch };
-    this.emit();
+    // Keep Ground Floor Medical Store directory entry aligned automatically
+    const medIdx = this.providers.findIndex(p => p.id === 'prov-medical-ground');
+    if (medIdx >= 0) {
+      const prev = this.providers[medIdx];
+      this.providers[medIdx] = {
+        ...prev,
+        name: this.contact.medicalStoreName || prev.name,
+        phone: this.contact.medicalStorePhone || prev.phone,
+        hours: this.contact.medicalStoreHours || prev.hours,
+        description: this.contact.medicalStoreDescription || prev.description,
+      };
+      this.emit();
+      return;
+    }
+    this.emit('contact_info');
   }
 
   // --- Wi-Fi Info ---
@@ -354,7 +565,7 @@ class PortalConfigService {
 
   updateWifi(patch: Partial<WifiConfig>): void {
     this.wifi = { ...this.wifi, ...patch };
-    this.emit();
+    this.emit('wifi_config');
   }
 
   // --- FAQs ---
@@ -370,18 +581,18 @@ class PortalConfigService {
       isActive: true,
     };
     this.faqs.push(item);
-    this.emit();
+    this.emit('portal_faqs');
     return item;
   }
 
   updateFaq(id: string, patch: Partial<Omit<FAQItem, 'id'>>): void {
     this.faqs = this.faqs.map(f => (f.id === id ? { ...f, ...patch } : f));
-    this.emit();
+    this.emit('portal_faqs');
   }
 
   deleteFaq(id: string): void {
     this.faqs = this.faqs.filter(f => f.id !== id);
-    this.emit();
+    this.emit('portal_faqs');
   }
 
   // --- Deliverable Items ---
@@ -404,18 +615,18 @@ class PortalConfigService {
       maxQty: input.maxQty || 6,
     };
     this.items.push(item);
-    this.emit();
+    this.emit('portal_deliverable_items');
     return item;
   }
 
   updateDeliverableItem(id: string, patch: Partial<Omit<PresetServiceItem, 'id'>>): void {
     this.items = this.items.map(i => (i.id === id ? { ...i, ...patch } : i));
-    this.emit();
+    this.emit('portal_deliverable_items');
   }
 
   deleteDeliverableItem(id: string): void {
     this.items = this.items.filter(i => i.id !== id);
-    this.emit();
+    this.emit('portal_deliverable_items');
   }
 
   // --- Common Presets ---
@@ -438,13 +649,18 @@ class PortalConfigService {
       isActive: true,
     };
     this.presets.push(item);
-    this.emit();
+    this.emit('portal_presets');
     return item;
+  }
+
+  updatePreset(id: string, patch: Partial<Omit<CategoryPreset, 'id'>>): void {
+    this.presets = this.presets.map(p => (p.id === id ? { ...p, ...patch } : p));
+    this.emit('portal_presets');
   }
 
   deletePreset(id: string): void {
     this.presets = this.presets.filter(p => p.id !== id);
-    this.emit();
+    this.emit('portal_presets');
   }
 
   // --- Local Service Providers & Quick Dial ---
@@ -458,18 +674,18 @@ class PortalConfigService {
       id: `prov-${Date.now()}`,
     };
     this.providers.push(provider);
-    this.emit();
+    this.emit('portal_providers');
     return provider;
   }
 
   updateProvider(id: string, patch: Partial<Omit<LocalServiceProvider, 'id'>>): void {
     this.providers = this.providers.map(p => (p.id === id ? { ...p, ...patch } : p));
-    this.emit();
+    this.emit('portal_providers');
   }
 
   deleteProvider(id: string): void {
     this.providers = this.providers.filter(p => p.id !== id);
-    this.emit();
+    this.emit('portal_providers');
   }
 
   resetDefaults(): void {
@@ -479,6 +695,9 @@ class PortalConfigService {
     this.providers = [...DEFAULT_PROVIDERS];
     this.wifi = { ...DEFAULT_WIFI };
     this.contact = { ...DEFAULT_CONTACT };
+    this.branding = { ...DEFAULT_BRANDING };
+    this.popularServices = [...DEFAULT_POPULAR_SERVICES];
+    this.categoryOverrides = {};
     this.emit();
   }
 }

@@ -2,8 +2,14 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { tokenService } from '@/lib/tokenService';
 import { requestService } from '@/features/requests/requestService';
-import { portalConfigService, WifiConfig, ContactAndBuildingConfig } from '@/features/config/portalConfigService';
-import { BUILDING_16_APARTMENTS, mockPMSAdapter } from '@/features/pms/mockAdapter';
+import {
+  portalConfigService,
+  WifiConfig,
+  ContactAndBuildingConfig,
+  PortalBrandingConfig,
+  PopularServiceConfig,
+} from '@/features/config/portalConfigService';
+import { mockPMSAdapter } from '@/features/pms/mockAdapter';
 import { PortalSession, Category, GuestRequest, FAQItem, LocalServiceProvider } from '@/types/guestcare';
 import { ServiceGrid } from '../components/ServiceGrid';
 import { PopularServicesRow, PopularServiceItem } from '../components/PopularServicesRow';
@@ -42,8 +48,12 @@ export const GuestPortalPage: React.FC = () => {
   const [myRequests, setMyRequests] = useState<GuestRequest[]>([]);
   const [faqs, setFaqs] = useState<FAQItem[]>([]);
   const [providers, setProviders] = useState<LocalServiceProvider[]>([]);
+  const [popularServices, setPopularServices] = useState<PopularServiceConfig[]>(
+    portalConfigService.getPopularServices(true)
+  );
   const [wifi, setWifi] = useState<WifiConfig>(portalConfigService.getWifi());
   const [contact, setContact] = useState<ContactAndBuildingConfig>(portalConfigService.getContact());
+  const [branding, setBranding] = useState<PortalBrandingConfig>(portalConfigService.getBranding());
 
   const [searchQuery, setSearchQuery] = useState('');
   const [showAllCategories, setShowAllCategories] = useState(true);
@@ -64,7 +74,9 @@ export const GuestPortalPage: React.FC = () => {
       // Helper to resolve a session directly for a building apartment unit (1A - 8B)
       const resolveByUnit = async (unitCode: string): Promise<boolean> => {
         const normalized = unitCode.trim().toUpperCase();
-        const apt = BUILDING_16_APARTMENTS.find(a => a.unitNumber.toUpperCase() === normalized);
+        const apt = mockPMSAdapter
+          .listAllBuildingApartments()
+          .find(a => a.unitNumber.toUpperCase() === normalized);
         if (!apt) return false;
 
         const res = await mockPMSAdapter.getReservationByApartmentUnit(apt.unitNumber);
@@ -167,7 +179,7 @@ export const GuestPortalPage: React.FC = () => {
     initSession();
   }, [tokenParam, unitParam]);
 
-  // Load live data & subscribe to both requestService and staff portalConfigService
+  // Load live data & subscribe to requestService, staff portalConfigService, and apartment stays
   useEffect(() => {
     if (!session) return;
 
@@ -176,16 +188,36 @@ export const GuestPortalPage: React.FC = () => {
       setMyRequests(requestService.listRequests({ reservationRef: session.reservationRef }));
       setFaqs(portalConfigService.getFaqs(true));
       setProviders(portalConfigService.getProviders(true));
+      setPopularServices(portalConfigService.getPopularServices(true));
       setWifi(portalConfigService.getWifi());
       setContact(portalConfigService.getContact());
+      setBranding(portalConfigService.getBranding());
+    };
+
+    const refreshGuestNameFromPMS = async () => {
+      const unitCode = session.apartmentRef.split(' - ')[0];
+      const latestRes = await mockPMSAdapter.getReservationByApartmentUnit(unitCode);
+      if (latestRes && latestRes.primaryGuest.fullName !== session.guestName) {
+        const updatedSession: PortalSession = {
+          ...session,
+          guestName: latestRes.primaryGuest.fullName,
+          apartmentRef: `${latestRes.apartment.unitNumber} - ${latestRes.apartment.name}`,
+        };
+        setSession(updatedSession);
+        sessionStorage.setItem('guestcare_active_session', JSON.stringify(updatedSession));
+      }
     };
 
     loadData();
     const unsubReq = requestService.subscribe(loadData);
     const unsubCfg = portalConfigService.subscribe(loadData);
+    const unsubPms = mockPMSAdapter.subscribe(() => {
+      void refreshGuestNameFromPMS();
+    });
     return () => {
       unsubReq();
       unsubCfg();
+      unsubPms();
     };
   }, [session]);
 
@@ -322,7 +354,7 @@ export const GuestPortalPage: React.FC = () => {
             </span>
             <div className="text-left leading-tight">
               <span className="block text-sm sm:text-base font-extrabold tracking-tight text-slate-900">
-                GuestCare
+                {branding.portalBrandName || 'GuestCare'}
               </span>
               <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500">
                 <MapPin className="h-3 w-3 text-[#11574A]" />
@@ -371,6 +403,14 @@ export const GuestPortalPage: React.FC = () => {
 
       {/* Main Content Area (Responsive: Mobile -> Tablet -> PC max-w-6xl) */}
       <main className="mx-auto max-w-6xl px-4 sm:px-6 pt-5 sm:pt-7 space-y-6 sm:space-y-8 text-left">
+        {/* Optional Staff Live Announcement Banner */}
+        {branding.noticeBanner?.trim() && (
+          <div className="flex items-center gap-2.5 rounded-2xl border border-[#11574A]/20 bg-[#F0F7F5] px-4 py-2.5 text-xs font-medium text-[#11574A]">
+            <span className="h-2 w-2 rounded-full bg-[#11574A] shrink-0 animate-pulse" />
+            <span>{branding.noticeBanner}</span>
+          </div>
+        )}
+
         {/* Search Bar */}
         <div className="relative">
           <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
@@ -403,10 +443,10 @@ export const GuestPortalPage: React.FC = () => {
                 Welcome, {session.guestName} • Apt {unitLabel}
               </span>
               <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight text-white leading-tight">
-                YOUR COMFORT, ONE TAP AWAY!
+                {branding.heroHeadline}
               </h1>
               <p className="text-xs sm:text-sm text-teal-100/90 leading-relaxed font-light max-w-lg">
-                Request housekeeping, laundry, maintenance, or order coffee, food, and everyday essentials right to your door.
+                {branding.heroSubtitle}
               </p>
               <div className="pt-1">
                 <Button
@@ -416,7 +456,7 @@ export const GuestPortalPage: React.FC = () => {
                   }}
                   className="bg-white text-[#11574A] hover:bg-teal-50 font-bold text-xs sm:text-sm rounded-xl px-5 py-2.5 shadow-sm"
                 >
-                  Explore Services
+                  {branding.heroCtaLabel || 'Explore Services'}
                 </Button>
               </div>
             </div>
@@ -533,14 +573,17 @@ export const GuestPortalPage: React.FC = () => {
           />
         </div>
 
-        {/* Section 2: Popular Requests */}
-        {!searchQuery && <PopularServicesRow onSelectPopular={handleSelectPopular} />}
+        {/* Section 2: Popular Requests (Staff Editable) */}
+        {!searchQuery && (
+          <PopularServicesRow items={popularServices} onSelectPopular={handleSelectPopular} />
+        )}
 
         {/* Section 3: ONE Unified Local Shops, Food & Ethiopia Ride Directory Card */}
         {!searchQuery && (
           <LocalProvidersSection
             providers={providers}
             apartmentRef={session.apartmentRef}
+            branding={branding}
             onOrderViaDesk={handleOrderViaDesk}
           />
         )}

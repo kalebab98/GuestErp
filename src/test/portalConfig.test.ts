@@ -70,5 +70,40 @@ describe('Staff Portal Content & Catalog Configuration Service', () => {
     portalConfigService.deleteProvider(newVendor.id);
     expect(portalConfigService.getProviders().some(p => p.id === newVendor.id)).toBe(false);
   });
+
+  it('allows staff to edit portal branding, popular cards, category labels, and presets', () => {
+    portalConfigService.updateBranding({
+      portalBrandName: 'Stadium Residences',
+      heroHeadline: 'WELCOME HOME!',
+      noticeBanner: 'Elevator check at 3 PM',
+    });
+    const branding = portalConfigService.getBranding();
+    expect(branding.portalBrandName).toBe('Stadium Residences');
+    expect(branding.heroHeadline).toBe('WELCOME HOME!');
+    expect(branding.noticeBanner).toBe('Elevator check at 3 PM');
+
+    portalConfigService.updateCategoryOverride('laundry', {
+      shortName: 'Express Laundry',
+      slaMinutes: 20,
+    });
+    const laundry = requestService.getCategoryById('laundry');
+    expect(laundry?.shortName).toBe('Express Laundry');
+    expect(laundry?.slaMinutes).toBe(20);
+
+    const addedPop = portalConfigService.addPopularService({
+      title: 'Airport Pickup',
+      subtitle: 'Front Desk',
+      eta: '~15 min',
+      categoryCode: 'guest_services',
+      presetText: 'Airport taxi / ride booking',
+      imageUrl: 'https://example.com/taxi.jpg',
+      isActive: true,
+    });
+    expect(portalConfigService.getPopularServices(true).some(p => p.id === addedPop.id)).toBe(true);
+
+    const preset = portalConfigService.addPreset('maintenance', 'Check balcony lock');
+    portalConfigService.updatePreset(preset.id, { label: 'Check main door lock' });
+    expect(portalConfigService.getPresets('maintenance').some(p => p.label === 'Check main door lock')).toBe(true);
+  });
 });
 

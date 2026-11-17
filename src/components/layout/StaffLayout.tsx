@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { notificationService } from '@/features/notifications/notificationService';
+import { portalConfigService } from '@/features/config/portalConfigService';
 import { NotificationItem } from '@/types/guestcare';
 import { QRGeneratorModal } from '@/features/staff/components/QRGeneratorModal';
 import {
@@ -30,8 +31,8 @@ const NAV_ITEMS = [
   { to: '/staff/housekeeping', label: 'Housekeeping', icon: Sparkles },
   { to: '/staff/health', label: 'Guest Health', icon: Activity },
   { to: '/staff/feedback', label: 'Guest Feedback', icon: MessageSquareHeart },
-  { to: '/staff/qr-codes', label: 'Apartment QR Codes', icon: QrCode },
-  { to: '/staff/portal-config', label: 'Portal Items & FAQs', icon: Sliders },
+  { to: '/staff/qr-codes', label: 'Apartments & QR Codes', icon: QrCode },
+  { to: '/staff/portal-config', label: 'Portal Content & Data', icon: Sliders },
   { to: '/staff/reports', label: 'Reports & Analytics', icon: BarChart3 },
   { to: '/staff/settings', label: 'Settings', icon: Settings },
 ];
@@ -44,14 +45,26 @@ export const StaffLayout: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [propertyName, setPropertyName] = useState(portalConfigService.getContact().propertyName);
+  const [brandName, setBrandName] = useState(portalConfigService.getBranding().portalBrandName);
 
   useEffect(() => {
     const updateNotifs = () => {
       setNotifications(notificationService.getNotifications());
       setUnreadCount(notificationService.getUnreadCount());
     };
+    const updateConfig = () => {
+      setPropertyName(portalConfigService.getContact().propertyName);
+      setBrandName(portalConfigService.getBranding().portalBrandName);
+    };
     updateNotifs();
-    return notificationService.subscribe(updateNotifs);
+    updateConfig();
+    const unsubN = notificationService.subscribe(updateNotifs);
+    const unsubC = portalConfigService.subscribe(updateConfig);
+    return () => {
+      unsubN();
+      unsubC();
+    };
   }, []);
 
   // Close mobile menu on route change
@@ -74,7 +87,7 @@ export const StaffLayout: React.FC = () => {
           </span>
           <div className="text-left leading-tight">
             <span className="block text-base font-extrabold tracking-tight text-slate-900">
-              GuestCare
+              {brandName || 'GuestCare'}
             </span>
             <span className="block text-[11px] font-medium text-slate-400">
               Staff Operations
@@ -198,14 +211,14 @@ export const StaffLayout: React.FC = () => {
 
             <div className="text-left">
               <div className="flex items-center gap-2">
-                <span className="md:hidden font-extrabold text-sm text-[#11574A]">GuestCare</span>
+                <span className="md:hidden font-extrabold text-sm text-[#11574A]">{brandName || 'GuestCare'}</span>
                 <span className="md:hidden text-slate-300">/</span>
                 <h2 className="text-sm sm:text-base font-bold text-slate-900 tracking-tight">
                   {currentPageLabel}
                 </h2>
               </div>
               <span className="hidden sm:block text-[11px] text-slate-400">
-                Grand Marina Residences • Operational Command
+                {propertyName} • Operational Command
               </span>
             </div>
           </div>

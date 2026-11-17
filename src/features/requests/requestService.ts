@@ -391,23 +391,32 @@ class RequestService {
   }
 
   /**
-   * Returns active categories hydrated with live Staff-editable items and presets
+   * Returns categories hydrated with live Staff-editable overrides, items, and presets
    */
-  getCategories(): Category[] {
-    return BASE_CATEGORIES.filter(c => c.isActive)
-      .sort((a, b) => a.displayOrder - b.displayOrder)
-      .map(cat => ({
+  getCategories(includeHidden = false): Category[] {
+    const overrides = portalConfigService.getCategoryOverrides();
+    return BASE_CATEGORIES.map(cat => {
+      const ov = overrides[cat.code];
+      return {
         ...cat,
+        ...(ov || {}),
+        isActive: ov?.isActive !== undefined ? ov.isActive : cat.isActive,
         presetItems: portalConfigService.getDeliverableItems(cat.code, true),
         commonIssues: portalConfigService.getPresets(cat.code, true).map(p => p.label),
-      }));
+      };
+    })
+      .filter(c => includeHidden || c.isActive)
+      .sort((a, b) => a.displayOrder - b.displayOrder);
   }
 
   getCategoryById(id: string): Category | undefined {
     const base = BASE_CATEGORIES.find(c => c.id === id || c.code === id);
     if (!base) return undefined;
+    const ov = portalConfigService.getCategoryOverrides()[base.code];
     return {
       ...base,
+      ...(ov || {}),
+      isActive: ov?.isActive !== undefined ? ov.isActive : base.isActive,
       presetItems: portalConfigService.getDeliverableItems(base.code, true),
       commonIssues: portalConfigService.getPresets(base.code, true).map(p => p.label),
     };
