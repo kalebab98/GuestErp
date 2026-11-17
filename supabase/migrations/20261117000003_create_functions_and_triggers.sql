@@ -274,3 +274,4 @@ CREATE TRIGGER trg_requests_recalc_health
 AFTER INSERT OR UPDATE ON guestcare.requests
 FOR EACH ROW
 EXECUTE FUNCTION guestcare.trg_recalc_health_on_request();
+

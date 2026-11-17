@@ -56,3 +56,4 @@ export interface IPMSAdapter {
   listActiveReservations(): Promise<PMSReservation[]>;
   searchReservations(query: string): Promise<PMSReservation[]>;
 }
+

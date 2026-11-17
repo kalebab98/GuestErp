@@ -79,3 +79,4 @@ CREATE POLICY p_settings_staff_read ON guestcare.settings
 
 CREATE POLICY p_settings_staff_manage ON guestcare.settings
     FOR ALL TO authenticated USING (true) WITH CHECK (true);
+

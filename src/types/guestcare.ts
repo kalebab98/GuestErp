@@ -1,5 +1,5 @@
 // Project: GuestCare
-// Domain types and models
+// Domain types and models - Upgraded for Luxury Hospitality & Detailed Services
 
 export type CategoryCode =
   | 'maintenance'
@@ -33,10 +33,28 @@ export type NotificationChannel = 'in_app' | 'email';
 
 export type NotificationStatus = 'pending' | 'sent' | 'failed';
 
+export interface ServiceSubcategory {
+  id: string;
+  name: string;
+  description?: string;
+  icon?: string;
+}
+
+export interface PresetServiceItem {
+  id: string;
+  name: string;
+  subcategoryId?: string;
+  description?: string;
+  unit?: string;
+  defaultQty?: number;
+  maxQty?: number;
+}
+
 export interface Category {
   id: string;
   code: CategoryCode;
   name: string;
+  shortName?: string;
   description: string;
   defaultDepartment: Department;
   defaultPriority: Priority;
@@ -44,6 +62,10 @@ export interface Category {
   iconName: string;
   displayOrder: number;
   isActive: boolean;
+  tagline?: string;
+  subcategories?: ServiceSubcategory[];
+  presetItems?: PresetServiceItem[];
+  commonIssues?: string[];
   createdAt: string;
 }
 
@@ -103,6 +125,12 @@ export interface StatusHistoryEntry {
   createdAt: string;
 }
 
+export interface RequestedItemPayload {
+  name: string;
+  quantity: number;
+  unit?: string;
+}
+
 export interface GuestRequest {
   id: string;
   ticketNumber: string;
@@ -111,6 +139,8 @@ export interface GuestRequest {
   guestName: string;
   categoryId: string;
   category?: Category;
+  subcategoryId?: string;
+  subcategoryName?: string;
   title: string;
   description: string;
   priority: Priority;
@@ -130,6 +160,10 @@ export interface GuestRequest {
   attachments?: RequestAttachment[];
   comments?: RequestComment[];
   statusHistory?: StatusHistoryEntry[];
+  // Detailed service properties:
+  requestedItems?: RequestedItemPayload[];
+  preferredTimeWindow?: string;
+  roomAccessPermission?: boolean;
 }
 
 export interface RequestAssignment {

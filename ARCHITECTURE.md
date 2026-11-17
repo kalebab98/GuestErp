@@ -86,3 +86,4 @@ GuestCare is designed as an event-driven, mobile-first hospitality application e
 - Encapsulated within its own PostgreSQL schema `guestcare`.
 - Strict foreign keys, CHECK constraints, and automated triggers.
 - Row Level Security (RLS) ensuring strict tenant isolation.
+

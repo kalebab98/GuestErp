@@ -26,3 +26,4 @@ CREATE TABLE IF NOT EXISTS guestcare.categories (
 
 -- Index for category code lookup and ordering
 CREATE INDEX IF NOT EXISTS idx_categories_active_order ON guestcare.categories(is_active, display_order);
+

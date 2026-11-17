@@ -6,8 +6,8 @@
   "description": "GuestCare - QR-based Guest Experience and Service Management System",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
-    "lint": "tsc -b --noEmit",
+    "build": "tsc --noEmit && vite build",
+    "lint": "tsc --noEmit",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",

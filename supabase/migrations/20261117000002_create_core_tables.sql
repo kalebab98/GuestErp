@@ -215,3 +215,4 @@ CREATE TABLE IF NOT EXISTS guestcare.settings (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_by UUID REFERENCES auth.users(id) ON DELETE SET NULL
 );
+

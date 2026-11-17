@@ -99,3 +99,4 @@ In Supabase Dashboard -> Storage:
 2. Visibility: Private.
 3. Allowed MIME types: `image/jpeg, image/png, image/webp, image/heic, application/pdf`.
 4. Max file size: `10MB`.
+

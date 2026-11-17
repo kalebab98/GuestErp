@@ -282,3 +282,4 @@ export class MockPMSAdapter implements IPMSAdapter {
 }
 
 export const mockPMSAdapter = new MockPMSAdapter();
+

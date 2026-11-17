@@ -214,3 +214,4 @@ Application-wide operational configurations.
 2. `trigger_request_status_history`: Inserts immutable transition audit records into `guestcare.status_history` on update of `status`.
 3. `trigger_reopen_counter`: Increments `reopen_count` when status changes back to `reopened`.
 4. `trigger_health_update_on_request`: Triggers guest health recalculation function when request status/priority changes.
+

@@ -58,3 +58,4 @@ Every security-sensitive event (session creation, revocation, status update, ass
 - Entity type and ID
 - Client IP & User-Agent
 - Diff of state changes (JSONB)
+

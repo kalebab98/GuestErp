@@ -14,11 +14,12 @@ export default defineConfig({
     port: 3000,
     host: true,
   },
-  // @ts-expect-error vitest types inline
+  // @ts-expect-error vitest config
   test: {
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
+    include: ['src/test/**/*.{test,spec}.ts'],
     css: false,
   },
 });
