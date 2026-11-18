@@ -20,6 +20,8 @@ import { ConfirmResolutionModal } from '../components/ConfirmResolutionModal';
 import { PrivateFeedbackModal } from '../components/PrivateFeedbackModal';
 import { GuestBottomNav } from '../components/GuestBottomNav';
 import { Button } from '@/components/ui/Button';
+import { Modal } from '@/components/ui/Modal';
+import { generateQRCodeDataUrl } from '@/lib/crypto';
 import {
   MapPin,
   Search,
@@ -34,7 +36,19 @@ import {
   MessageSquareHeart,
   ArrowRight,
   X,
+  QrCode,
+  MessageCircle,
+  Cross,
+  Store,
+  Calendar,
 } from 'lucide-react';
+
+function getTimeGreeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good morning';
+  if (hour < 18) return 'Good afternoon';
+  return 'Good evening';
+}
 
 export const GuestPortalPage: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -60,12 +74,40 @@ export const GuestPortalPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showAllCategories, setShowAllCategories] = useState(true);
 
-  // Modals
+  // Modals & Interactive App State
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [initialPreset, setInitialPreset] = useState<string | undefined>(undefined);
   const [confirmModalRequest, setConfirmModalRequest] = useState<GuestRequest | null>(null);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [directoryOpen, setDirectoryOpen] = useState(false);
+  const [wifiQrOpen, setWifiQrOpen] = useState(false);
+  const [wifiQrDataUrl, setWifiQrDataUrl] = useState<string | null>(null);
   const [wifiCopied, setWifiCopied] = useState(false);
+  const [toast, setToast] = useState<{
+    message: string;
+    actionLabel?: string;
+    onAction?: () => void;
+  } | null>(null);
+
+  const showToast = (message: string, actionLabel?: string, onAction?: () => void) => {
+    setToast({ message, actionLabel, onAction });
+  };
+
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 4200);
+    return () => clearTimeout(t);
+  }, [toast]);
+
+  // Generate standard WPA Wi-Fi QR code whenever Wi-Fi QR modal opens
+  useEffect(() => {
+    if (!wifiQrOpen) return;
+    const esc = (s: string) => s.replace(/([\\;,:"])/g, '\\$1');
+    const payload = `WIFI:T:WPA;S:${esc(wifi.networkName)};P:${esc(wifi.password)};;`;
+    generateQRCodeDataUrl(payload)
+      .then(setWifiQrDataUrl)
+      .catch(() => setWifiQrDataUrl(null));
+  }, [wifiQrOpen, wifi.networkName, wifi.password]);
 
   // Resolve apartment session cleanly from QR token (cross-device via Supabase) or unit code (1A-8B)
   useEffect(() => {
@@ -231,10 +273,31 @@ export const GuestPortalPage: React.FC = () => {
         c.name.toLowerCase().includes(q) ||
         (c.shortName && c.shortName.toLowerCase().includes(q)) ||
         c.description.toLowerCase().includes(q) ||
+        (c.tagline && c.tagline.toLowerCase().includes(q)) ||
         (c.commonIssues && c.commonIssues.some(issue => issue.toLowerCase().includes(q))) ||
         (c.presetItems && c.presetItems.some(item => item.name.toLowerCase().includes(q)))
     );
   }, [categories, searchQuery]);
+
+  const filteredProviders = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const q = searchQuery.toLowerCase().trim();
+    return providers.filter(
+      p =>
+        p.name.toLowerCase().includes(q) ||
+        p.category.toLowerCase().includes(q) ||
+        p.description.toLowerCase().includes(q) ||
+        p.phone.toLowerCase().includes(q)
+    );
+  }, [providers, searchQuery]);
+
+  const filteredFaqs = useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const q = searchQuery.toLowerCase().trim();
+    return faqs.filter(
+      f => f.question.toLowerCase().includes(q) || f.answer.toLowerCase().includes(q)
+    );
+  }, [faqs, searchQuery]);
 
   const handleCreateRequest = async (data: {
     categoryId: string;
@@ -245,7 +308,7 @@ export const GuestPortalPage: React.FC = () => {
     attachments: any[];
   }) => {
     if (!session) return;
-    await requestService.createRequest({
+    const created = await requestService.createRequest({
       reservationRef: session.reservationRef,
       apartmentRef: session.apartmentRef,
       guestName: session.guestName,
@@ -256,6 +319,7 @@ export const GuestPortalPage: React.FC = () => {
       requestedItems: data.requestedItems,
       attachments: data.attachments,
     });
+    showToast(`Request sent (${created.ticketNumber})`, 'Track', () => navigate('/portal/requests'));
   };
 
   const handleSelectPopular = (item: PopularServiceItem) => {
@@ -278,6 +342,9 @@ export const GuestPortalPage: React.FC = () => {
       guestName: session.guestName,
       notesOrReason,
     });
+    showToast(
+      satisfied ? 'Thank you! Ticket confirmed closed.' : 'Ticket reopened with priority escalation.'
+    );
   };
 
   const handleFeedbackSubmit = async (feedback: {
@@ -295,11 +362,13 @@ export const GuestPortalPage: React.FC = () => {
       guestName: session.guestName,
       ...feedback,
     });
+    showToast('Feedback sent directly to management. Thank you!');
   };
 
   const handleCopyWifi = () => {
     navigator.clipboard.writeText(wifi.password);
     setWifiCopied(true);
+    showToast(`Wi-Fi password copied (${wifi.networkName})`);
     setTimeout(() => setWifiCopied(false), 2000);
   };
 
@@ -411,8 +480,38 @@ export const GuestPortalPage: React.FC = () => {
         </div>
       </header>
 
+      {/* Floating Native App Toast */}
+      {toast && (
+        <div className="fixed top-16 sm:top-20 left-4 right-4 z-50 flex justify-center pointer-events-none">
+          <div className="pointer-events-auto animate-toast-in inline-flex items-center gap-2.5 rounded-full bg-[#0B231E] text-white pl-3.5 pr-2.5 py-2 text-xs font-medium ring-1 ring-white/15 shadow-[0_14px_36px_-10px_rgba(11,35,30,0.65)] max-w-md">
+            <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
+            <span className="truncate">{toast.message}</span>
+            {toast.actionLabel && toast.onAction && (
+              <button
+                type="button"
+                onClick={() => {
+                  toast.onAction?.();
+                  setToast(null);
+                }}
+                className="shrink-0 rounded-full bg-white/15 hover:bg-white/25 px-2.5 py-0.5 text-[11px] font-semibold text-teal-200 transition-colors"
+              >
+                {toast.actionLabel} &rarr;
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setToast(null)}
+              aria-label="Dismiss"
+              className="shrink-0 rounded-full p-0.5 text-white/50 hover:text-white transition-colors"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Main Content Container */}
-      <main className="mx-auto max-w-5xl px-4 sm:px-6 pt-4 sm:pt-6 space-y-6 sm:space-y-8 text-left">
+      <main className="mx-auto max-w-5xl px-4 sm:px-6 pt-4 sm:pt-6 space-y-5 sm:space-y-7 text-left">
         {/* Optional Staff Live Announcement Banner */}
         {branding.noticeBanner?.trim() && (
           <div className="flex items-center gap-2.5 rounded-2xl bg-white ring-1 ring-[#0F4C40]/20 px-4 py-2.5 text-xs font-medium text-[#0F4C40] shadow-[0_2px_10px_-4px_rgba(15,76,64,0.12)] animate-fadeIn">
@@ -421,12 +520,12 @@ export const GuestPortalPage: React.FC = () => {
           </div>
         )}
 
-        {/* Spotlight-Style Search Bar */}
+        {/* Spotlight Unified Search Bar */}
         <div className="relative">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 stroke-[1.75]" />
           <input
             type="text"
-            placeholder="Search services or items (towels, laundry, coffee, wifi)..."
+            placeholder="Search services, items, rides, pharmacy, or FAQs..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             className="w-full rounded-2xl bg-white pl-10 pr-10 h-11 sm:h-12 text-xs sm:text-[13.5px] text-slate-900 placeholder:text-slate-400 ring-1 ring-slate-900/[0.07] shadow-[0_1px_2px_rgba(15,23,42,0.03),0_6px_18px_-12px_rgba(15,23,42,0.12)] focus:ring-2 focus:ring-[#0F4C40]/35 focus:outline-none transition-all"
@@ -443,110 +542,196 @@ export const GuestPortalPage: React.FC = () => {
           )}
         </div>
 
-        {/* Double-Bezel Machined Obsidian-Emerald Hero + Glass Wi-Fi Card */}
-        <div className="bezel-shell rounded-[1.75rem] p-1.5">
-          <div
-            className="relative overflow-hidden rounded-[1.375rem] bg-[#0B231E] p-5 sm:p-7 md:p-8 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_20px_48px_-20px_rgba(11,35,30,0.65)]"
-            style={{
-              backgroundImage:
-                'radial-gradient(ellipse 70% 80% at 10% 0%, rgba(45, 212, 191, 0.22), transparent 58%), radial-gradient(ellipse 60% 70% at 95% 100%, rgba(16, 185, 129, 0.16), transparent 55%)',
-            }}
-          >
-            {/* Subtle architectural micro-dot texture */}
-            <div
-              className="pointer-events-none absolute inset-0 opacity-[0.12]"
-              style={{
-                backgroundImage:
-                  'radial-gradient(rgba(255,255,255,0.45) 0.75px, transparent 0.75px)',
-                backgroundSize: '18px 18px',
-              }}
-            />
+        {/* Double-Bezel Machined Obsidian-Emerald Hero + Wi-Fi Hardware Card */}
+        {!searchQuery && (
+          <div className="animate-section-rise space-y-3">
+            <div className="bezel-shell rounded-[1.75rem] p-1.5">
+              <div
+                className="relative overflow-hidden rounded-[1.375rem] bg-[#0B231E] p-4.5 sm:p-6 md:p-7 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_20px_48px_-20px_rgba(11,35,30,0.65)]"
+                style={{
+                  backgroundImage:
+                    'radial-gradient(ellipse 70% 80% at 10% 0%, rgba(45, 212, 191, 0.22), transparent 58%), radial-gradient(ellipse 60% 70% at 95% 100%, rgba(16, 185, 129, 0.16), transparent 55%)',
+                }}
+              >
+                <div
+                  className="pointer-events-none absolute inset-0 opacity-[0.1]"
+                  style={{
+                    backgroundImage:
+                      'radial-gradient(rgba(255,255,255,0.45) 0.75px, transparent 0.75px)',
+                    backgroundSize: '18px 18px',
+                  }}
+                />
 
-            <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-7 items-center">
-              {/* Left: Editorial Welcome & Precision CTA */}
-              <div className="lg:col-span-7 space-y-3">
-                <div className="inline-flex items-center gap-2 rounded-full bg-white/[0.08] ring-1 ring-white/[0.14] px-3 py-1 text-[11px] font-medium text-teal-100 backdrop-blur-md">
-                  <MapPin className="h-3 w-3 text-teal-300" />
-                  <span>
-                    {session.guestName} <span className="text-white/40 mx-1">•</span> Apt {unitLabel}
-                  </span>
-                </div>
-
-                <h1 className="text-[22px] sm:text-[28px] md:text-[32px] font-bold tracking-[-0.03em] text-white leading-[1.12] [text-wrap:balance]">
-                  {branding.heroHeadline}
-                </h1>
-
-                <p className="text-xs sm:text-[13.5px] text-teal-100/80 leading-relaxed max-w-lg font-normal">
-                  {branding.heroSubtitle}
-                </p>
-
-                <div className="pt-1">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const target = document.getElementById('service-categories-section');
-                      target?.scrollIntoView({ behavior: 'smooth' });
-                    }}
-                    className="group inline-flex items-center gap-2 rounded-full bg-white hover:bg-teal-50 text-[#0B231E] font-semibold text-xs sm:text-[13px] px-4.5 py-2.5 shadow-[0_6px_20px_-6px_rgba(0,0,0,0.4)] active:scale-95 transition-all"
-                  >
-                    <span>{branding.heroCtaLabel || 'Explore Services'}</span>
-                    <ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Right: Machined Smoked-Glass Wi-Fi Card */}
-              <div className="lg:col-span-5">
-                <div className="rounded-2xl bg-white/[0.06] backdrop-blur-xl ring-1 ring-white/[0.12] shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] p-4 space-y-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-teal-400/15 ring-1 ring-teal-300/25 text-teal-200">
-                        <Wifi className="h-4 w-4 stroke-[1.75]" />
-                      </div>
-                      <div className="min-w-0">
-                        <span className="block text-[10px] uppercase tracking-[0.12em] text-teal-200/75 font-semibold">
-                          Apartment Wi-Fi
+                <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 items-center">
+                  {/* Left: Dynamic Time Greeting + Stay Badge + Headline */}
+                  <div className="lg:col-span-7 space-y-2.5">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.09] ring-1 ring-white/[0.14] px-2.5 py-0.5 text-[11px] font-medium text-teal-100 backdrop-blur-md">
+                        <MapPin className="h-3 w-3 text-teal-300" />
+                        <span>
+                          {getTimeGreeting()}, {session.guestName.split(' ')[0]} • Apt {unitLabel}
                         </span>
-                        <span className="block text-[13.5px] font-semibold text-white font-mono truncate">
-                          {wifi.networkName}
+                      </span>
+                      {session.checkOutDate && (
+                        <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-white/[0.06] ring-1 ring-white/[0.1] px-2.5 py-0.5 text-[10.5px] font-mono tabular-nums text-teal-200/80">
+                          <Calendar className="h-2.5 w-2.5" />
+                          <span>
+                            Until{' '}
+                            {new Date(session.checkOutDate).toLocaleDateString(undefined, {
+                              month: 'short',
+                              day: 'numeric',
+                            })}
+                          </span>
+                        </span>
+                      )}
+                    </div>
+
+                    <h1 className="text-[22px] sm:text-[28px] md:text-[32px] font-bold tracking-[-0.03em] text-white leading-[1.1] [text-wrap:balance]">
+                      {branding.heroHeadline}
+                    </h1>
+
+                    <p className="text-xs sm:text-[13.5px] text-teal-100/80 leading-relaxed max-w-lg font-normal">
+                      {branding.heroSubtitle}
+                    </p>
+
+                    <div className="pt-0.5 hidden sm:block">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const target = document.getElementById('service-categories-section');
+                          target?.scrollIntoView({ behavior: 'smooth' });
+                        }}
+                        className="group inline-flex items-center gap-2 rounded-full bg-white hover:bg-teal-50 text-[#0B231E] font-semibold text-xs px-4 py-2 shadow-[0_6px_20px_-6px_rgba(0,0,0,0.4)] active:scale-95 transition-all"
+                      >
+                        <span>{branding.heroCtaLabel || 'Explore Services'}</span>
+                        <ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Right: Compact Machined Smoked-Glass Wi-Fi Card with Copy + Instant Wi-Fi QR */}
+                  <div className="lg:col-span-5">
+                    <div className="rounded-2xl bg-white/[0.07] backdrop-blur-xl ring-1 ring-white/[0.13] shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] p-3.5 sm:p-4 space-y-2.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-teal-400/15 ring-1 ring-teal-300/25 text-teal-200">
+                            <Wifi className="h-4 w-4 stroke-[1.75]" />
+                          </div>
+                          <div className="min-w-0">
+                            <span className="block text-[9.5px] uppercase tracking-[0.12em] text-teal-200/75 font-semibold">
+                              Apartment Wi-Fi
+                            </span>
+                            <span className="block text-[13px] font-semibold text-white font-mono truncate">
+                              {wifi.networkName}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => setWifiQrOpen(true)}
+                            aria-label="Show Wi-Fi QR Code"
+                            title="Scan to connect Wi-Fi"
+                            className="inline-flex h-7.5 w-7.5 items-center justify-center rounded-full bg-white/12 hover:bg-white/22 ring-1 ring-white/15 text-teal-100 active:scale-95 transition-all p-1.5"
+                          >
+                            <QrCode className="h-3.5 w-3.5" />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={handleCopyWifi}
+                            className={`inline-flex items-center gap-1 rounded-full px-3 h-7.5 py-1 text-[11px] font-semibold active:scale-95 transition-all ${
+                              wifiCopied
+                                ? 'bg-emerald-400 text-slate-950'
+                                : 'bg-white text-[#0B231E] hover:bg-teal-50'
+                            }`}
+                          >
+                            {wifiCopied ? (
+                              <>
+                                <Check className="h-3 w-3 stroke-[2.5]" />
+                                <span>Copied</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="h-3 w-3" />
+                                <span>Copy</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between rounded-xl bg-black/25 px-3 py-2 ring-1 ring-white/[0.08]">
+                        <span className="text-[11px] text-teal-200/75 font-medium">Password</span>
+                        <span className="font-mono tabular-nums text-[12.5px] font-semibold tracking-wider text-white select-all">
+                          {wifi.password}
                         </span>
                       </div>
                     </div>
-
-                    <button
-                      type="button"
-                      onClick={handleCopyWifi}
-                      className={`shrink-0 inline-flex items-center gap-1.5 rounded-full px-3 h-7.5 py-1 text-[11px] font-semibold active:scale-95 transition-all ${
-                        wifiCopied
-                          ? 'bg-emerald-400 text-slate-950'
-                          : 'bg-white text-[#0B231E] hover:bg-teal-50'
-                      }`}
-                    >
-                      {wifiCopied ? (
-                        <>
-                          <Check className="h-3 w-3 stroke-[2.5]" />
-                          <span>Copied</span>
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="h-3 w-3" />
-                          <span>Copy</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-
-                  <div className="flex items-center justify-between rounded-xl bg-black/25 px-3.5 py-2 ring-1 ring-white/[0.08]">
-                    <span className="text-[11px] text-teal-200/75 font-medium">Password</span>
-                    <span className="font-mono tabular-nums text-[13px] font-semibold tracking-wider text-white select-all">
-                      {wifi.password}
-                    </span>
                   </div>
                 </div>
               </div>
             </div>
+
+            {/* One-Tap Native Quick Actions Pill Rail */}
+            <div className="no-scrollbar flex items-center gap-2 overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0 py-0.5">
+              <button
+                type="button"
+                onClick={() => setDirectoryOpen(true)}
+                className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-white ring-1 ring-slate-900/[0.07] hover:ring-[#0F4C40]/35 px-3.5 h-8.5 py-1.5 text-xs font-semibold text-slate-800 shadow-[0_1px_2px_rgba(15,23,42,0.03)] active:scale-95 transition-all"
+              >
+                <Store className="h-3.5 w-3.5 text-[#0F4C40]" />
+                <span>Quick Dial & Rides</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => navigate('/portal/requests')}
+                className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-white ring-1 ring-slate-900/[0.07] hover:ring-[#0F4C40]/35 px-3.5 h-8.5 py-1.5 text-xs font-semibold text-slate-800 shadow-[0_1px_2px_rgba(15,23,42,0.03)] active:scale-95 transition-all"
+              >
+                <ClipboardList className="h-3.5 w-3.5 text-[#0F4C40]" />
+                <span>My Requests</span>
+                {myRequests.length > 0 && (
+                  <span className="rounded-full bg-[#ECF5F2] px-1.5 py-0.5 text-[10px] font-mono tabular-nums font-bold text-[#0F4C40]">
+                    {myRequests.length}
+                  </span>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setWifiQrOpen(true)}
+                className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-white ring-1 ring-slate-900/[0.07] hover:ring-[#0F4C40]/35 px-3.5 h-8.5 py-1.5 text-xs font-semibold text-slate-800 shadow-[0_1px_2px_rgba(15,23,42,0.03)] active:scale-95 transition-all"
+              >
+                <QrCode className="h-3.5 w-3.5 text-[#0F4C40]" />
+                <span>Wi-Fi QR</span>
+              </button>
+
+              <a
+                href={`tel:${contact.medicalStorePhone.replace(/\s+/g, '')}`}
+                className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-white ring-1 ring-slate-900/[0.07] hover:ring-rose-300 px-3.5 h-8.5 py-1.5 text-xs font-semibold text-slate-800 shadow-[0_1px_2px_rgba(15,23,42,0.03)] active:scale-95 transition-all"
+              >
+                <Cross className="h-3.5 w-3.5 text-rose-500" />
+                <span>Medical Store</span>
+              </a>
+
+              {contact.frontDeskWhatsapp && (
+                <a
+                  href={`https://wa.me/${contact.frontDeskWhatsapp.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
+                    `Hello Front Desk, I am staying in Apt ${unitLabel} (${session.guestName}). `
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-white ring-1 ring-slate-900/[0.07] hover:ring-[#25D366]/50 px-3.5 h-8.5 py-1.5 text-xs font-semibold text-slate-800 shadow-[0_1px_2px_rgba(15,23,42,0.03)] active:scale-95 transition-all"
+                >
+                  <MessageCircle className="h-3.5 w-3.5 text-[#16A34A]" />
+                  <span>WhatsApp Desk</span>
+                </a>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Action Banner: Guest Confirmation Pending */}
         {resolvedPendingConfirmation.length > 0 && (
@@ -566,7 +751,7 @@ export const GuestPortalPage: React.FC = () => {
             <Button
               size="sm"
               variant="success"
-              className="w-full sm:w-auto text-xs font-semibold rounded-xl px-4 py-2"
+              className="w-full sm:w-auto text-xs font-semibold rounded-full px-4 py-2"
               onClick={() => setConfirmModalRequest(resolvedPendingConfirmation[0])}
             >
               Confirm Satisfaction or Reopen
@@ -575,7 +760,7 @@ export const GuestPortalPage: React.FC = () => {
         )}
 
         {/* Active In-Progress Banner */}
-        {activeRequests.length > 0 && resolvedPendingConfirmation.length === 0 && (
+        {activeRequests.length > 0 && resolvedPendingConfirmation.length === 0 && !searchQuery && (
           <div
             onClick={() => navigate('/portal/requests')}
             role="button"
@@ -606,19 +791,76 @@ export const GuestPortalPage: React.FC = () => {
         )}
 
         {/* Section 1: Service Categories */}
-        <div id="service-categories-section">
-          <ServiceGrid
-            categories={filteredCategories}
-            onSelectCategory={cat => {
-              setSelectedCategory(cat);
-              setInitialPreset(undefined);
-            }}
-            showAll={showAllCategories}
-            onToggleShowAll={() => setShowAllCategories(!showAllCategories)}
-          />
-        </div>
+        {(!searchQuery || filteredCategories.length > 0) && (
+          <div id="service-categories-section" className="animate-section-rise">
+            <ServiceGrid
+              categories={filteredCategories}
+              onSelectCategory={cat => {
+                setSelectedCategory(cat);
+                setInitialPreset(undefined);
+              }}
+              showAll={showAllCategories}
+              onToggleShowAll={() => setShowAllCategories(!showAllCategories)}
+            />
+          </div>
+        )}
 
-        {/* Section 2: Popular Requests (Staff Editable) */}
+        {/* Unified Search Results: Matching Local Quick Dial Contacts */}
+        {searchQuery && filteredProviders.length > 0 && (
+          <section className="space-y-2.5 animate-fadeIn">
+            <h2 className="text-xs font-semibold uppercase tracking-[0.06em] text-slate-400 px-0.5">
+              Quick Dial Matches ({filteredProviders.length})
+            </h2>
+            <div className="overflow-hidden rounded-2xl bg-white ring-1 ring-slate-900/[0.06] divide-y divide-slate-100">
+              {filteredProviders.map(p => (
+                <div key={p.id} className="flex items-center justify-between gap-3 px-4 py-3">
+                  <div className="min-w-0">
+                    <p className="text-xs sm:text-sm font-semibold text-slate-900 truncate">{p.name}</p>
+                    <p className="text-[11px] text-slate-500 truncate">{p.category} • {p.hours}</p>
+                  </div>
+                  <a
+                    href={`tel:${p.phone.replace(/\s+/g, '')}`}
+                    className="shrink-0 inline-flex items-center gap-1 rounded-lg bg-[#0F4C40] text-white h-7.5 px-2.5 py-1 text-[11px] font-mono tabular-nums font-semibold"
+                  >
+                    <Phone className="h-3 w-3" />
+                    <span>{p.phone}</span>
+                  </a>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Unified Search Results: Matching FAQs */}
+        {searchQuery && filteredFaqs.length > 0 && (
+          <div className="animate-fadeIn">
+            <GuestFAQSection faqs={filteredFaqs} />
+          </div>
+        )}
+
+        {/* Unified Search Empty State */}
+        {searchQuery &&
+          filteredCategories.length === 0 &&
+          filteredProviders.length === 0 &&
+          filteredFaqs.length === 0 && (
+            <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-8 text-center space-y-2 animate-fadeIn">
+              <p className="text-sm font-semibold text-slate-800">
+                No matches for "{searchQuery}"
+              </p>
+              <p className="text-xs text-slate-500">
+                Try searching towels, laundry, coffee, RIDE, pharmacy, or checkout — or contact Front Desk.
+              </p>
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="inline-flex items-center rounded-full bg-[#0F4C40] text-white px-4 h-8 text-xs font-semibold mt-1"
+              >
+                Clear Search
+              </button>
+            </div>
+          )}
+
+        {/* Section 2: Popular Requests (Mobile Snap Carousel / Desktop 4-Col Grid) */}
         {!searchQuery && (
           <PopularServicesRow items={popularServices} onSelectPopular={handleSelectPopular} />
         )}
@@ -629,58 +871,127 @@ export const GuestPortalPage: React.FC = () => {
             providers={providers}
             apartmentRef={session.apartmentRef}
             branding={branding}
+            externalOpen={directoryOpen}
+            onExternalOpenChange={setDirectoryOpen}
             onOrderViaDesk={handleOrderViaDesk}
           />
         )}
 
-        {/* Section 4: Frequently Asked Questions (Staff Editable) */}
+        {/* Section 4: Frequently Asked Questions (Smooth Accordion) */}
         {!searchQuery && <GuestFAQSection faqs={faqs} />}
 
-        {/* Section 5: Feedback & 24/7 Front Desk */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-          <div className="porcelain-card flex items-center justify-between gap-3 rounded-2xl border border-slate-200/75 p-4">
-            <div className="space-y-0.5 min-w-0">
-              <span className="inline-flex items-center gap-1 text-[10.5px] font-semibold text-rose-500">
-                <MessageSquareHeart className="h-3 w-3" />
-                <span>Direct to Management</span>
-              </span>
-              <h3 className="text-[13.5px] font-semibold tracking-[-0.01em] text-slate-900">
-                Private Feedback
-              </h3>
-              <p className="text-[11.5px] text-slate-500">Share thoughts anytime during your stay</p>
+        {/* Section 5: Feedback & 24/7 Front Desk (Call + WhatsApp) */}
+        {!searchQuery && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+            <div className="porcelain-card flex items-center justify-between gap-3 rounded-2xl border border-slate-200/75 p-4">
+              <div className="space-y-0.5 min-w-0">
+                <span className="inline-flex items-center gap-1 text-[10.5px] font-semibold text-rose-500">
+                  <MessageSquareHeart className="h-3 w-3" />
+                  <span>Direct to Management</span>
+                </span>
+                <h3 className="text-[13.5px] font-semibold tracking-[-0.01em] text-slate-900">
+                  Private Feedback
+                </h3>
+                <p className="text-[11.5px] text-slate-500">
+                  Share thoughts anytime during your stay
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setFeedbackOpen(true)}
+                className="shrink-0 rounded-full ring-1 ring-slate-200 bg-white hover:ring-rose-300 hover:text-rose-600 px-3.5 h-8 text-xs font-semibold text-slate-700 active:scale-95 transition-all"
+              >
+                Rate Stay
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={() => setFeedbackOpen(true)}
-              className="shrink-0 rounded-full ring-1 ring-slate-200 bg-white hover:ring-rose-300 hover:text-rose-600 px-3.5 h-8 text-xs font-semibold text-slate-700 active:scale-95 transition-all"
-            >
-              Rate Stay
-            </button>
+
+            <div className="porcelain-card flex items-center justify-between gap-3 rounded-2xl border border-slate-200/75 p-4">
+              <div className="space-y-0.5 min-w-0">
+                <span className="inline-flex items-center gap-1 text-[10.5px] font-semibold text-[#0F4C40]">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                  <span>24/7 Front Desk</span>
+                </span>
+                <h3 className="text-[13.5px] font-semibold tracking-[-0.01em] text-slate-900">
+                  Need Immediate Help?
+                </h3>
+                <p className="text-[11.5px] text-slate-500 font-mono tabular-nums">
+                  {contact.frontDeskPhone}
+                </p>
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0">
+                {contact.frontDeskWhatsapp && (
+                  <a
+                    href={`https://wa.me/${contact.frontDeskWhatsapp.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
+                      `Hello Front Desk, I am staying in Apt ${unitLabel} (${session.guestName}). `
+                    )}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="WhatsApp Front Desk"
+                    title="WhatsApp Front Desk"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#25D366]/10 text-[#15803D] ring-1 ring-[#25D366]/25 hover:bg-[#25D366] hover:text-white active:scale-95 transition-all"
+                  >
+                    <MessageCircle className="h-3.5 w-3.5" />
+                  </a>
+                )}
+                <a
+                  href={`tel:${contact.frontDeskPhone.replace(/\s+/g, '')}`}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-[#0F4C40] hover:bg-[#0B3B31] px-3.5 h-8 text-xs font-semibold text-white shadow-[0_2px_10px_-2px_rgba(15,76,64,0.4)] active:scale-95 transition-all"
+                >
+                  <Phone className="h-3 w-3" />
+                  <span>Call</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        )}
+      </main>
+
+      {/* Instant Wi-Fi QR Quick-Connect Modal */}
+      <Modal
+        isOpen={wifiQrOpen}
+        onClose={() => setWifiQrOpen(false)}
+        title="Connect to Apartment Wi-Fi"
+        description="Point another phone or tablet camera at this code to join automatically"
+        size="sm"
+      >
+        <div className="space-y-4 text-center">
+          <div className="mx-auto inline-flex flex-col items-center rounded-2xl bg-[#F6F8FA] ring-1 ring-slate-900/[0.06] p-4">
+            {wifiQrDataUrl ? (
+              <img
+                src={wifiQrDataUrl}
+                alt={`Wi-Fi QR for ${wifi.networkName}`}
+                className="h-48 w-48 rounded-xl bg-white p-2 ring-1 ring-slate-900/[0.05] object-contain"
+              />
+            ) : (
+              <div className="h-48 w-48 flex items-center justify-center text-xs text-slate-400">
+                Generating Wi-Fi QR...
+              </div>
+            )}
           </div>
 
-          <div className="porcelain-card flex items-center justify-between gap-3 rounded-2xl border border-slate-200/75 p-4">
-            <div className="space-y-0.5 min-w-0">
-              <span className="inline-flex items-center gap-1 text-[10.5px] font-semibold text-[#0F4C40]">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                <span>24/7 Front Desk</span>
-              </span>
-              <h3 className="text-[13.5px] font-semibold tracking-[-0.01em] text-slate-900">
-                Need Immediate Help?
-              </h3>
-              <p className="text-[11.5px] text-slate-500 font-mono tabular-nums">
-                {contact.frontDeskPhone}
-              </p>
+          <div className="rounded-xl bg-[#F6F8FA] ring-1 ring-slate-900/[0.05] p-3.5 text-left space-y-2 text-xs">
+            <div className="flex items-center justify-between">
+              <span className="text-slate-500">Network</span>
+              <span className="font-mono font-semibold text-slate-900">{wifi.networkName}</span>
             </div>
-            <a
-              href={`tel:${contact.frontDeskPhone.replace(/\s+/g, '')}`}
-              className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-[#0F4C40] hover:bg-[#0B3B31] px-3.5 h-8 text-xs font-semibold text-white shadow-[0_2px_10px_-2px_rgba(15,76,64,0.4)] active:scale-95 transition-all"
-            >
-              <Phone className="h-3 w-3" />
-              <span>Call Desk</span>
-            </a>
+            <div className="flex items-center justify-between border-t border-slate-200/70 pt-2">
+              <span className="text-slate-500">Password</span>
+              <span className="font-mono tabular-nums font-semibold text-slate-900 select-all">
+                {wifi.password}
+              </span>
+            </div>
           </div>
+
+          <button
+            type="button"
+            onClick={handleCopyWifi}
+            className="w-full inline-flex items-center justify-center gap-1.5 rounded-full bg-[#0F4C40] hover:bg-[#0B3B31] text-white h-10 text-xs font-semibold active:scale-[0.98] transition-all"
+          >
+            {wifiCopied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+            <span>{wifiCopied ? 'Password Copied' : 'Copy Wi-Fi Password'}</span>
+          </button>
         </div>
-      </main>
+      </Modal>
 
       {/* Fast Service Request Modal (with Selected Items Summary + General Issue Box) */}
       <SimpleServiceModal

@@ -20,6 +20,8 @@ interface LocalProvidersSectionProps {
   providers: LocalServiceProvider[];
   apartmentRef: string;
   branding?: PortalBrandingConfig;
+  externalOpen?: boolean;
+  onExternalOpenChange?: (open: boolean) => void;
   onOrderViaDesk: (provider: LocalServiceProvider) => void;
 }
 
@@ -47,11 +49,19 @@ export const LocalProvidersSection: React.FC<LocalProvidersSectionProps> = ({
   providers,
   apartmentRef,
   branding,
+  externalOpen,
+  onExternalOpenChange,
   onOrderViaDesk,
 }) => {
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [modalSearch, setModalSearch] = useState('');
+
+  const menuOpen = externalOpen !== undefined ? externalOpen : internalOpen;
+  const setMenuOpen = (val: boolean) => {
+    setInternalOpen(val);
+    onExternalOpenChange?.(val);
+  };
 
   // Distinct categories dynamically derived from staff-configured providers
   const categories = useMemo(() => {
@@ -89,14 +99,17 @@ export const LocalProvidersSection: React.FC<LocalProvidersSectionProps> = ({
     branding?.directoryCardDescription ||
     'Direct dial numbers for Ethiopia rides (RIDE 8294, Feres 6090), ground floor medical store, mini-markets, coffee & meals.';
 
+  // Instant 1-tap dial shortcuts surfaced cleanly on the summary card
+  const instantShortcuts = providers.slice(0, 3);
+
   return (
     <section className="space-y-3 text-left">
       <div className="flex items-end justify-between px-0.5">
         <div>
-          <h2 className="text-[15px] sm:text-[17px] font-semibold text-slate-900 tracking-[-0.02em]">
+          <h2 className="text-[16px] sm:text-[18px] font-semibold text-slate-900 tracking-[-0.025em]">
             {sectionTitle}
           </h2>
-          <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">
+          <p className="text-[11.5px] sm:text-xs text-slate-500 mt-0.5">
             Direct call, WhatsApp, or front desk delivery
           </p>
         </div>
@@ -105,7 +118,7 @@ export const LocalProvidersSection: React.FC<LocalProvidersSectionProps> = ({
         </span>
       </div>
 
-      {/* Double-Bezel Porcelain Directory Card */}
+      {/* ONE Double-Bezel Porcelain Directory Card with Details + 1-Tap Quick Dial Chips */}
       <div className="bezel-shell rounded-[1.5rem] p-1.5">
         <div
           onClick={() => setMenuOpen(true)}
@@ -138,7 +151,7 @@ export const LocalProvidersSection: React.FC<LocalProvidersSectionProps> = ({
               </div>
 
               <div className="min-w-0 space-y-1">
-                <h3 className="text-[13px] sm:text-[15px] font-semibold tracking-[-0.015em] text-slate-900 group-hover:text-[#0F4C40] transition-colors leading-snug">
+                <h3 className="text-[13.5px] sm:text-[15px] font-semibold tracking-[-0.015em] text-slate-900 group-hover:text-[#0F4C40] transition-colors leading-snug">
                   {cardTitle}
                 </h3>
                 <p className="text-[11.5px] sm:text-xs text-slate-500 leading-relaxed line-clamp-2 max-w-xl">
@@ -161,18 +174,42 @@ export const LocalProvidersSection: React.FC<LocalProvidersSectionProps> = ({
             </button>
           </div>
 
-          {/* Slim Horizontal Scrollable Category Chips */}
-          <div className="no-scrollbar flex items-center gap-1.5 overflow-x-auto pt-2.5 mt-3 border-t border-slate-100">
-            {categories
-              .filter(c => c !== 'All')
-              .map(cat => (
-                <span
-                  key={cat}
-                  className="shrink-0 rounded-full bg-[#F6F8FA] ring-1 ring-slate-900/[0.05] px-2.5 py-0.5 text-[10.5px] font-medium text-slate-600"
+          {/* Instant 1-Tap Quick Dial Chips Row (Tap to call directly without opening modal) */}
+          <div className="no-scrollbar flex items-center gap-1.5 overflow-x-auto pt-3 mt-3 border-t border-slate-100">
+            {instantShortcuts.map(shortcut => {
+              const Icon = getProviderIcon(shortcut.category, shortcut.name);
+              const isRide = shortcut.category.toLowerCase().includes('ride');
+              const shortLabel = shortcut.name.split('(')[0].trim();
+              return (
+                <a
+                  key={shortcut.id}
+                  href={`tel:${shortcut.phone.replace(/\s+/g, '')}`}
+                  onClick={e => e.stopPropagation()}
+                  className={`shrink-0 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 transition-all active:scale-95 ${
+                    isRide
+                      ? 'bg-amber-50/80 text-amber-800 ring-amber-500/20 hover:bg-amber-100/80'
+                      : 'bg-[#F6F8FA] text-slate-700 ring-slate-900/[0.06] hover:bg-[#ECF5F2] hover:text-[#0F4C40]'
+                  }`}
                 >
-                  {cat}
-                </span>
-              ))}
+                  <Icon className="h-3 w-3 shrink-0" />
+                  <span className="max-w-[110px] truncate">{shortLabel}</span>
+                  <span className="font-mono tabular-nums text-[10.5px] opacity-80">
+                    {shortcut.phone}
+                  </span>
+                </a>
+              );
+            })}
+
+            <button
+              type="button"
+              onClick={e => {
+                e.stopPropagation();
+                setMenuOpen(true);
+              }}
+              className="shrink-0 inline-flex items-center gap-1 rounded-full bg-white ring-1 ring-slate-200 px-2.5 py-1 text-[11px] font-semibold text-[#0F4C40] hover:bg-[#F2F7F5] transition-colors"
+            >
+              <span>+{Math.max(0, providers.length - instantShortcuts.length)} more</span>
+            </button>
           </div>
         </div>
       </div>
@@ -239,7 +276,6 @@ export const LocalProvidersSection: React.FC<LocalProvidersSectionProps> = ({
 
                 return (
                   <div key={catName} className="space-y-2">
-                    {/* Compact Category Header */}
                     <div className="flex items-center gap-1.5 px-0.5">
                       <div
                         className={`flex h-5 w-5 items-center justify-center rounded-md ${
@@ -253,7 +289,6 @@ export const LocalProvidersSection: React.FC<LocalProvidersSectionProps> = ({
                       </h4>
                     </div>
 
-                    {/* Sleek Hairline Contact Rows */}
                     <div className="overflow-hidden rounded-2xl ring-1 ring-slate-900/[0.06] bg-white divide-y divide-slate-100">
                       {list.map(provider => {
                         const whatsappLink = provider.whatsapp
@@ -267,7 +302,6 @@ export const LocalProvidersSection: React.FC<LocalProvidersSectionProps> = ({
                             key={provider.id}
                             className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 px-3 py-2.5 sm:px-4 sm:py-3 hover:bg-[#F9FBFD] transition-colors"
                           >
-                            {/* Contact Info */}
                             <div className="min-w-0 space-y-0.5">
                               <div className="flex items-center justify-between sm:justify-start gap-2">
                                 <span className="text-[13px] sm:text-[13.5px] font-semibold tracking-[-0.01em] text-slate-900 truncate">

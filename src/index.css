@@ -122,6 +122,36 @@ body {
   }
 }
 
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -12px, 0) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes sectionRise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.animate-toast-in {
+  animation: toastIn 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.animate-section-rise {
+  animation: sectionRise 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 @keyframes floatOrb {
   0%, 100% {
     transform: translate3d(0, 0, 0) scale(1);

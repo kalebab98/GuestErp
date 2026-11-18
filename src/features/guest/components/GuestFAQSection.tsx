@@ -15,10 +15,10 @@ export const GuestFAQSection: React.FC<GuestFAQSectionProps> = ({ faqs }) => {
     <section className="space-y-3.5 text-left">
       <div className="flex items-end justify-between px-0.5">
         <div>
-          <h2 className="text-[15px] sm:text-[17px] font-semibold text-slate-900 tracking-[-0.02em]">
+          <h2 className="text-[16px] sm:text-[18px] font-semibold text-slate-900 tracking-[-0.025em]">
             Frequently Asked Questions
           </h2>
-          <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">
+          <p className="text-[11.5px] sm:text-xs text-slate-500 mt-0.5">
             Quick answers about your apartment and stay
           </p>
         </div>
@@ -27,7 +27,7 @@ export const GuestFAQSection: React.FC<GuestFAQSectionProps> = ({ faqs }) => {
         </span>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-3 items-start">
         {faqs.map((faq, index) => {
           const isOpen = openId === faq.id;
           return (
@@ -42,6 +42,7 @@ export const GuestFAQSection: React.FC<GuestFAQSectionProps> = ({ faqs }) => {
               <button
                 type="button"
                 onClick={() => setOpenId(isOpen ? null : faq.id)}
+                aria-expanded={isOpen}
                 className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left"
               >
                 <div className="flex items-center gap-2.5 min-w-0">
@@ -53,7 +54,7 @@ export const GuestFAQSection: React.FC<GuestFAQSectionProps> = ({ faqs }) => {
                   </span>
                 </div>
                 <span
-                  className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full transition-all duration-200 ${
+                  className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
                     isOpen ? 'bg-[#ECF5F2] text-[#0F4C40] rotate-180' : 'bg-slate-100/80 text-slate-400'
                   }`}
                 >
@@ -61,11 +62,18 @@ export const GuestFAQSection: React.FC<GuestFAQSectionProps> = ({ faqs }) => {
                 </span>
               </button>
 
-              {isOpen && (
-                <div className="px-4 pb-4 pt-2.5 text-xs sm:text-[13px] text-slate-600 leading-relaxed border-t border-slate-100 bg-[#FAFBFD] animate-fadeIn">
-                  {faq.answer}
+              {/* Smooth iOS-Style Grid-Row Height Glide */}
+              <div
+                className={`grid transition-[grid-template-rows] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                  isOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+                }`}
+              >
+                <div className="overflow-hidden">
+                  <div className="px-4 pb-4 pt-2.5 text-xs sm:text-[13px] text-slate-600 leading-relaxed border-t border-slate-100 bg-[#FAFBFD]">
+                    {faq.answer}
+                  </div>
                 </div>
-              )}
+              </div>
             </div>
           );
         })}
