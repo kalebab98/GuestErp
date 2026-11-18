@@ -79,9 +79,11 @@ export const AllRequestsPage: React.FC<AllRequestsPageProps> = ({
   return (
     <div className="space-y-5 text-left">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
         <div>
-          <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900">{title}</h1>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-[-0.025em] text-slate-900">
+            {title}
+          </h1>
           <p className="text-xs text-slate-500 mt-0.5">{subtitle}</p>
         </div>
 
@@ -89,24 +91,24 @@ export const AllRequestsPage: React.FC<AllRequestsPageProps> = ({
           size="sm"
           variant="outline"
           onClick={loadData}
-          className="gap-1.5 text-xs rounded-xl bg-white border-slate-200 hover:border-[#11574A]"
+          className="gap-1.5 text-xs rounded-full self-start sm:self-auto"
         >
-          <RefreshCw className="h-3.5 w-3.5 text-[#11574A]" />
+          <RefreshCw className="h-3.5 w-3.5 text-[#0F4C40]" />
           <span>Refresh</span>
         </Button>
       </div>
 
-      {/* Filter and Search Bar (matches Guest Center rounded inputs) */}
-      <div className="rounded-2xl bg-white border border-slate-200/70 p-4 shadow-2xs space-y-3">
-        <div className="flex flex-col lg:flex-row items-center gap-3">
+      {/* Porcelain Filter and Search Bar */}
+      <div className="rounded-2xl bg-white border border-slate-200/75 p-3.5 sm:p-4 shadow-[0_1px_2px_rgba(15,23,42,0.03),0_8px_24px_-16px_rgba(15,23,42,0.08)] space-y-3">
+        <div className="flex flex-col lg:flex-row items-center gap-2.5">
           <div className="relative flex-1 w-full">
-            <Search className="absolute left-3.5 top-2.5 h-4 w-4 text-slate-400" />
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
             <input
               type="text"
               placeholder="Search by ticket #, apartment, guest name, or keyword..."
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="w-full rounded-xl bg-[#F6F8F8] pl-10 pr-4 py-2 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 border border-transparent focus:border-[#11574A]/40 focus:bg-white focus:outline-none transition-all"
+              className="w-full rounded-xl bg-[#F6F8FA] pl-9 pr-4 h-9 text-xs text-slate-900 placeholder:text-slate-400 ring-1 ring-slate-900/[0.06] focus:ring-2 focus:ring-[#0F4C40]/35 focus:bg-white focus:outline-none transition-all"
             />
           </div>
 
@@ -115,7 +117,7 @@ export const AllRequestsPage: React.FC<AllRequestsPageProps> = ({
               <select
                 value={department}
                 onChange={e => setDepartment(e.target.value as any)}
-                className="rounded-xl border border-slate-200 bg-[#F6F8F8] px-3 py-2 text-xs font-medium text-slate-700 focus:border-[#11574A] focus:bg-white focus:outline-none"
+                className="rounded-xl ring-1 ring-slate-900/[0.07] bg-[#F6F8FA] px-3 h-9 text-xs font-medium text-slate-700 focus:ring-2 focus:ring-[#0F4C40]/35 focus:bg-white focus:outline-none"
               >
                 <option value="all">All Departments</option>
                 <option value="maintenance">Maintenance</option>
@@ -128,7 +130,7 @@ export const AllRequestsPage: React.FC<AllRequestsPageProps> = ({
             <select
               value={status}
               onChange={e => setStatus(e.target.value as any)}
-              className="rounded-xl border border-slate-200 bg-[#F6F8F8] px-3 py-2 text-xs font-medium text-slate-700 focus:border-[#11574A] focus:bg-white focus:outline-none"
+              className="rounded-xl ring-1 ring-slate-900/[0.07] bg-[#F6F8FA] px-3 h-9 text-xs font-medium text-slate-700 focus:ring-2 focus:ring-[#0F4C40]/35 focus:bg-white focus:outline-none"
             >
               <option value="all">All Statuses</option>
               <option value="new">New</option>
@@ -145,7 +147,7 @@ export const AllRequestsPage: React.FC<AllRequestsPageProps> = ({
             <select
               value={priority}
               onChange={e => setPriority(e.target.value as any)}
-              className="rounded-xl border border-slate-200 bg-[#F6F8F8] px-3 py-2 text-xs font-medium text-slate-700 focus:border-[#11574A] focus:bg-white focus:outline-none"
+              className="rounded-xl ring-1 ring-slate-900/[0.07] bg-[#F6F8FA] px-3 h-9 text-xs font-medium text-slate-700 focus:ring-2 focus:ring-[#0F4C40]/35 focus:bg-white focus:outline-none"
             >
               <option value="all">All Priorities</option>
               <option value="urgent">Urgent</option>
@@ -157,7 +159,7 @@ export const AllRequestsPage: React.FC<AllRequestsPageProps> = ({
             <select
               value={sortBy}
               onChange={e => setSortBy(e.target.value as any)}
-              className="rounded-xl border border-slate-200 bg-[#F6F8F8] px-3 py-2 text-xs font-medium text-slate-700 focus:border-[#11574A] focus:bg-white focus:outline-none"
+              className="rounded-xl ring-1 ring-slate-900/[0.07] bg-[#F6F8FA] px-3 h-9 text-xs font-medium text-slate-700 focus:ring-2 focus:ring-[#0F4C40]/35 focus:bg-white focus:outline-none"
             >
               <option value="newest">Newest First</option>
               <option value="oldest">Oldest First</option>

@@ -85,118 +85,152 @@ export const OverviewPage: React.FC = () => {
 
   return (
     <div className="space-y-6 sm:space-y-7 text-left">
-      {/* Signature Deep Forest Teal Hero Banner (aligned with Guest Center) */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0F4F43] via-[#11574A] to-[#156758] p-5 sm:p-7 text-white shadow-lg">
-        <div className="absolute -top-12 -right-12 h-44 w-44 rounded-full bg-white/5 pointer-events-none" />
-        <div className="absolute -bottom-16 -left-16 h-48 w-48 rounded-full bg-black/10 pointer-events-none" />
+      {/* Double-Bezel Machined Obsidian-Emerald Hero Banner */}
+      <div className="bezel-shell rounded-[1.75rem] p-1.5">
+        <div
+          className="relative overflow-hidden rounded-[1.375rem] bg-[#0B231E] p-5 sm:p-7 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_20px_48px_-20px_rgba(11,35,30,0.6)]"
+          style={{
+            backgroundImage:
+              'radial-gradient(ellipse 70% 80% at 10% 0%, rgba(45, 212, 191, 0.2), transparent 58%), radial-gradient(ellipse 55% 65% at 95% 100%, rgba(16, 185, 129, 0.14), transparent 55%)',
+          }}
+        >
+          <div
+            className="pointer-events-none absolute inset-0 opacity-[0.1]"
+            style={{
+              backgroundImage:
+                'radial-gradient(rgba(255,255,255,0.45) 0.75px, transparent 0.75px)',
+              backgroundSize: '18px 18px',
+            }}
+          />
 
-        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-5">
-          <div className="space-y-2 max-w-xl">
-            <span className="inline-block text-[10px] sm:text-xs font-mono font-semibold uppercase tracking-widest text-teal-200">
-              Staff Command Center
-            </span>
-            <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight text-white leading-tight">
-              OPERATIONS OVERVIEW
-            </h1>
-            <p className="text-xs sm:text-sm text-teal-100/90 leading-relaxed font-light">
-              Monitor live guest requests, assign department staff, track guest health scores, and manage Guest Portal items & FAQs in real time.
-            </p>
-          </div>
+          <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+            <div className="space-y-2 max-w-xl">
+              <div className="inline-flex items-center gap-2 rounded-full bg-white/[0.08] ring-1 ring-white/[0.14] px-3 py-1 text-[11px] font-medium text-teal-100">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span>Staff Command Center • Live</span>
+              </div>
+              <h1 className="text-[22px] sm:text-[26px] md:text-[30px] font-bold tracking-[-0.03em] text-white leading-[1.12]">
+                Operations overview
+              </h1>
+              <p className="text-xs sm:text-[13.5px] text-teal-100/80 leading-relaxed font-normal">
+                Monitor live guest requests, assign department staff, track guest health scores, and control all Guest Portal content in real time.
+              </p>
+            </div>
 
-          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
-            <Button
-              onClick={() => navigate('/staff/requests')}
-              className="bg-white text-[#11574A] hover:bg-teal-50 font-bold text-xs rounded-xl px-4 py-2.5 shadow-sm gap-1.5"
-            >
-              <span>All Tickets ({requests.length})</span>
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Button>
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => navigate('/staff/requests')}
+                className="group inline-flex items-center gap-1.5 rounded-full bg-white hover:bg-teal-50 text-[#0B231E] font-semibold text-xs px-4 h-9 shadow-[0_6px_20px_-6px_rgba(0,0,0,0.4)] active:scale-95 transition-all tabular-nums"
+              >
+                <span>All Tickets ({requests.length})</span>
+                <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+              </button>
 
-            <button
-              type="button"
-              onClick={() => navigate('/staff/portal-config')}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 px-4 py-2.5 text-xs font-semibold text-white transition-colors"
-            >
-              <Sliders className="h-3.5 w-3.5 text-teal-200" />
-              <span>Edit Portal & FAQs</span>
-            </button>
+              <button
+                type="button"
+                onClick={() => navigate('/staff/portal-config')}
+                className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.08] hover:bg-white/[0.15] ring-1 ring-white/[0.16] px-4 h-9 text-xs font-semibold text-white active:scale-95 transition-all"
+              >
+                <Sliders className="h-3.5 w-3.5 text-teal-300" />
+                <span>Edit Portal Data</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Clean KPI Grid (Soft rounded cards matching Guest Center) */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <div className="rounded-2xl bg-white border border-slate-200/70 p-4 sm:p-5 shadow-2xs space-y-3">
+      {/* Porcelain KPI Grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-3.5">
+        <div className="porcelain-card rounded-2xl border border-slate-200/75 p-4 sm:p-5 space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500">Active Requests</span>
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#F0F7F5] text-[#11574A]">
-              <Inbox className="h-4 w-4" />
+            <span className="text-xs font-medium text-slate-500">Active Requests</span>
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#F2F7F5] ring-1 ring-[#0F4C40]/10 text-[#0F4C40]">
+              <Inbox className="h-4 w-4 stroke-[1.7]" />
             </div>
           </div>
           <div>
-            <p className="text-2xl sm:text-3xl font-extrabold text-slate-900">{activeRequests.length}</p>
-            <p className="text-[11px] text-slate-400 mt-0.5">{requests.length} total logged</p>
+            <p className="text-2xl sm:text-3xl font-bold tracking-[-0.03em] tabular-nums text-slate-900">
+              {activeRequests.length}
+            </p>
+            <p className="text-[11px] font-mono tabular-nums text-slate-400 mt-0.5">
+              {requests.length} total logged
+            </p>
           </div>
         </div>
 
-        <div className="rounded-2xl bg-white border border-slate-200/70 p-4 sm:p-5 shadow-2xs space-y-3">
+        <div className="porcelain-card rounded-2xl border border-slate-200/75 p-4 sm:p-5 space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500">Urgent / Reopened</span>
+            <span className="text-xs font-medium text-slate-500">Urgent / Reopened</span>
             <div
-              className={`flex h-9 w-9 items-center justify-center rounded-xl ${
-                urgentCount > 0 ? 'bg-rose-50 text-rose-600' : 'bg-slate-100 text-slate-400'
+              className={`flex h-8 w-8 items-center justify-center rounded-xl ring-1 ${
+                urgentCount > 0
+                  ? 'bg-rose-50 ring-rose-200/80 text-rose-600'
+                  : 'bg-slate-100/80 ring-slate-900/[0.05] text-slate-400'
               }`}
             >
-              <AlertTriangle className="h-4 w-4" />
+              <AlertTriangle className="h-4 w-4 stroke-[1.7]" />
             </div>
           </div>
           <div>
-            <p className={`text-2xl sm:text-3xl font-extrabold ${urgentCount > 0 ? 'text-rose-600' : 'text-slate-900'}`}>
+            <p
+              className={`text-2xl sm:text-3xl font-bold tracking-[-0.03em] tabular-nums ${
+                urgentCount > 0 ? 'text-rose-600' : 'text-slate-900'
+              }`}
+            >
               {urgentCount}
             </p>
             <p className="text-[11px] text-slate-400 mt-0.5">Immediate attention</p>
           </div>
         </div>
 
-        <div className="rounded-2xl bg-white border border-slate-200/70 p-4 sm:p-5 shadow-2xs space-y-3">
+        <div className="porcelain-card rounded-2xl border border-slate-200/75 p-4 sm:p-5 space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500">Guests At Risk</span>
+            <span className="text-xs font-medium text-slate-500">Guests At Risk</span>
             <div
-              className={`flex h-9 w-9 items-center justify-center rounded-xl ${
-                criticalHealthCount > 0 ? 'bg-amber-50 text-amber-600' : 'bg-emerald-50 text-emerald-600'
+              className={`flex h-8 w-8 items-center justify-center rounded-xl ring-1 ${
+                criticalHealthCount > 0
+                  ? 'bg-amber-50 ring-amber-200/80 text-amber-600'
+                  : 'bg-emerald-50 ring-emerald-200/80 text-emerald-600'
               }`}
             >
-              <Activity className="h-4 w-4" />
+              <Activity className="h-4 w-4 stroke-[1.7]" />
             </div>
           </div>
           <div>
-            <p className="text-2xl sm:text-3xl font-extrabold text-slate-900">{criticalHealthCount}</p>
+            <p className="text-2xl sm:text-3xl font-bold tracking-[-0.03em] tabular-nums text-slate-900">
+              {criticalHealthCount}
+            </p>
             <p className="text-[11px] text-slate-400 mt-0.5">Pre-checkout watch</p>
           </div>
         </div>
 
-        <div className="rounded-2xl bg-white border border-slate-200/70 p-4 sm:p-5 shadow-2xs space-y-3">
+        <div className="porcelain-card rounded-2xl border border-slate-200/75 p-4 sm:p-5 space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500">Resolution Rate</span>
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
-              <CheckCircle2 className="h-4 w-4" />
+            <span className="text-xs font-medium text-slate-500">Resolution Rate</span>
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-50 ring-1 ring-emerald-200/80 text-emerald-600">
+              <CheckCircle2 className="h-4 w-4 stroke-[1.7]" />
             </div>
           </div>
           <div>
-            <p className="text-2xl sm:text-3xl font-extrabold text-emerald-700">{satisfactionRate}%</p>
+            <p className="text-2xl sm:text-3xl font-bold tracking-[-0.03em] tabular-nums text-emerald-700">
+              {satisfactionRate}%
+            </p>
             <p className="text-[11px] text-slate-400 mt-0.5">Guest confirmed</p>
           </div>
         </div>
       </div>
 
-      {/* Department Open Queues (Clean Guest-Portal-style Category Tiles) */}
+      {/* Department Open Queues (Matched Porcelain Tiles) */}
       <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-base font-bold text-slate-900 tracking-tight">Department Queues</h2>
-          <span className="text-xs text-slate-400">Open tickets by team</span>
+        <div className="flex items-end justify-between px-0.5">
+          <h2 className="text-[15px] font-semibold text-slate-900 tracking-[-0.02em]">
+            Department Queues
+          </h2>
+          <span className="text-[11px] text-slate-400">Open tickets by team</span>
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5">
           {deptQueues.map(dept => {
             const Icon = dept.icon;
             return (
@@ -204,22 +238,22 @@ export const OverviewPage: React.FC = () => {
                 key={dept.label}
                 type="button"
                 onClick={() => navigate(dept.path)}
-                className="group flex items-center justify-between gap-3 rounded-2xl bg-white hover:border-[#11574A]/35 border border-slate-200/70 p-3.5 sm:p-4 text-left shadow-2xs hover:shadow-md transition-all active:scale-[0.98]"
+                className="porcelain-card group flex items-center justify-between gap-2.5 rounded-2xl border border-slate-200/75 hover:border-[#0F4C40]/30 p-3.5 text-left hover:-translate-y-0.5 active:scale-[0.985]"
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#F0F7F5] text-[#11574A] group-hover:bg-[#11574A] group-hover:text-white transition-colors">
-                    <Icon className="h-5 w-5" />
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#F2F7F5] ring-1 ring-[#0F4C40]/10 text-[#0F4C40] group-hover:bg-[#0F4C40] group-hover:text-white transition-all duration-200">
+                    <Icon className="h-4.5 w-4.5 stroke-[1.6]" />
                   </div>
                   <div className="min-w-0">
-                    <span className="block text-xs sm:text-sm font-bold text-slate-900 truncate">
+                    <span className="block text-[13px] font-semibold tracking-[-0.01em] text-slate-900 truncate">
                       {dept.label}
                     </span>
-                    <span className="block text-[11px] font-medium text-slate-500">
+                    <span className="block text-[11px] font-mono tabular-nums text-slate-400 mt-0.5">
                       {dept.count} open
                     </span>
                   </div>
                 </div>
-                <ChevronRight className="h-4 w-4 shrink-0 text-slate-300 group-hover:text-[#11574A] group-hover:translate-x-0.5 transition-all" />
+                <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-300 group-hover:text-[#0F4C40] group-hover:translate-x-0.5 transition-all" />
               </button>
             );
           })}
@@ -229,13 +263,15 @@ export const OverviewPage: React.FC = () => {
       {/* Main Split: Priority Queue (Left 2 cols) + Guest Health & Feedback (Right 1 col) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Priority Action Queue */}
-        <div className="lg:col-span-2 space-y-3.5">
-          <div className="flex items-center justify-between">
-            <h2 className="text-base font-bold text-slate-900 tracking-tight">Priority Action Queue</h2>
+        <div className="lg:col-span-2 space-y-3">
+          <div className="flex items-center justify-between px-0.5">
+            <h2 className="text-[15px] font-semibold text-slate-900 tracking-[-0.02em]">
+              Priority Action Queue
+            </h2>
             <button
               type="button"
               onClick={() => navigate('/staff/requests')}
-              className="inline-flex items-center gap-0.5 text-xs font-semibold text-[#11574A] hover:underline"
+              className="inline-flex items-center gap-0.5 text-xs font-semibold text-[#0F4C40] hover:underline"
             >
               <span>View all</span>
               <ChevronRight className="h-3.5 w-3.5" />
@@ -243,40 +279,52 @@ export const OverviewPage: React.FC = () => {
           </div>
 
           {priorityActionQueue.length === 0 ? (
-            <div className="rounded-3xl border border-slate-200/70 bg-white p-10 text-center space-y-2 shadow-2xs">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
-                <CheckCircle2 className="h-6 w-6" />
+            <div className="bezel-shell rounded-[1.5rem] p-1.5">
+              <div className="bezel-core rounded-[1.15rem] p-10 text-center space-y-2">
+                <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 ring-1 ring-emerald-200/80 text-emerald-600">
+                  <CheckCircle2 className="h-5 w-5" />
+                </div>
+                <p className="text-sm font-semibold text-slate-900">All Priority Tickets Handled</p>
+                <p className="text-xs text-slate-500">
+                  No urgent or newly unacknowledged tickets waiting right now.
+                </p>
               </div>
-              <p className="text-sm font-bold text-slate-900">All Priority Tickets Handled</p>
-              <p className="text-xs text-slate-500">No urgent or newly unacknowledged tickets waiting right now.</p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               {priorityActionQueue.map(req => (
                 <div
                   key={req.id}
                   onClick={() => setSelectedRequest(req)}
-                  className={`rounded-2xl border p-4 sm:p-5 transition-all cursor-pointer hover:shadow-md ${
+                  className={`porcelain-card rounded-2xl border p-4 sm:p-5 cursor-pointer ${
                     req.status === 'reopened'
-                      ? 'border-rose-300 bg-rose-50/30'
-                      : 'border-slate-200/70 bg-white hover:border-[#11574A]/30'
+                      ? 'border-rose-300/90 bg-rose-50/25'
+                      : 'border-slate-200/75 hover:border-[#0F4C40]/30'
                   }`}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="space-y-1.5 min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-mono text-[11px] font-bold text-slate-400">{req.ticketNumber}</span>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="font-mono tabular-nums text-[11px] font-semibold text-slate-400">
+                          {req.ticketNumber}
+                        </span>
                         <StatusBadge status={req.status} />
                         <PriorityBadge priority={req.priority} />
                       </div>
-                      <h3 className="text-sm font-bold text-slate-900 leading-snug">{req.title}</h3>
+                      <h3 className="text-[14px] font-semibold tracking-[-0.01em] text-slate-900 leading-snug">
+                        {req.title}
+                      </h3>
                       <p className="text-xs text-slate-500 line-clamp-1">{req.description}</p>
                     </div>
 
                     <div className="text-right shrink-0">
-                      <span className="text-xs font-bold text-slate-900 block">{req.apartmentRef.split(' - ')[0]}</span>
+                      <span className="text-xs font-semibold text-slate-900 block">
+                        Apt {req.apartmentRef.split(' - ')[0]}
+                      </span>
                       <span className="text-[11px] text-slate-500">{req.guestName}</span>
-                      <p className="text-[10px] text-slate-400 mt-1">{formatTimeAgo(req.createdAt)}</p>
+                      <p className="text-[10.5px] font-mono tabular-nums text-slate-400 mt-1">
+                        {formatTimeAgo(req.createdAt)}
+                      </p>
                     </div>
                   </div>
 
@@ -285,18 +333,18 @@ export const OverviewPage: React.FC = () => {
                       Team: <strong className="text-slate-800">{req.assignedDepartment}</strong>{' '}
                       {req.assignedStaffName ? `• ${req.assignedStaffName}` : '• Unassigned'}
                     </span>
-                    <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
+                    <div className="flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
                       <Button
                         size="sm"
                         variant="outline"
-                        className="text-xs h-8 px-3 rounded-xl border-slate-200"
+                        className="text-xs h-7.5 px-3 rounded-full"
                         onClick={() => setAssignModalReq(req)}
                       >
                         Assign
                       </Button>
                       <Button
                         size="sm"
-                        className="text-xs h-8 px-3 rounded-xl bg-[#11574A] hover:bg-[#0D443A] text-white"
+                        className="text-xs h-7.5 px-3 rounded-full"
                         onClick={() => setStatusModalReq(req)}
                       >
                         Update
@@ -312,32 +360,38 @@ export const OverviewPage: React.FC = () => {
         {/* Right Column: Guest Health Watch & In-Stay Feedback */}
         <div className="space-y-5">
           {/* Guest Health Watch */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h2 className="text-base font-bold text-slate-900 tracking-tight">Guest Health Watch</h2>
+          <div className="space-y-2.5">
+            <div className="flex items-center justify-between px-0.5">
+              <h2 className="text-[15px] font-semibold text-slate-900 tracking-[-0.02em]">
+                Guest Health Watch
+              </h2>
               <button
                 type="button"
                 onClick={() => navigate('/staff/health')}
-                className="text-xs font-semibold text-[#11574A] hover:underline"
+                className="text-xs font-semibold text-[#0F4C40] hover:underline"
               >
                 All Stays
               </button>
             </div>
 
-            <div className="space-y-2.5">
+            <div className="space-y-2">
               {healthRecords.slice(0, 4).map(h => (
                 <div
                   key={h.id}
                   onClick={() => navigate('/staff/health')}
-                  className="rounded-2xl border border-slate-200/70 bg-white p-4 hover:border-[#11574A]/30 hover:shadow-sm transition-all cursor-pointer"
+                  className="porcelain-card rounded-2xl border border-slate-200/75 hover:border-[#0F4C40]/30 p-3.5 cursor-pointer"
                 >
                   <div className="flex items-center justify-between gap-2 mb-1.5">
-                    <span className="font-bold text-xs text-slate-900 truncate">{h.apartmentRef.split(' - ')[0]} • {h.guestName}</span>
+                    <span className="font-semibold text-xs text-slate-900 truncate">
+                      Apt {h.apartmentRef.split(' - ')[0]} • {h.guestName}
+                    </span>
                     <HealthStatusBadge status={h.status} />
                   </div>
-                  <div className="flex items-center justify-between text-[11px] text-slate-500 mt-2">
+                  <div className="flex items-center justify-between text-[11px] text-slate-500 mt-1.5">
                     <span className="truncate pr-2">{h.reasons[0]}</span>
-                    <span className="font-mono font-bold text-slate-800 shrink-0">{h.score}/100</span>
+                    <span className="font-mono tabular-nums font-semibold text-slate-800 shrink-0">
+                      {h.score}/100
+                    </span>
                   </div>
                 </div>
               ))}
@@ -345,36 +399,45 @@ export const OverviewPage: React.FC = () => {
           </div>
 
           {/* Recent In-Stay Feedback */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h2 className="text-base font-bold text-slate-900 tracking-tight">Recent Feedback</h2>
+          <div className="space-y-2.5">
+            <div className="flex items-center justify-between px-0.5">
+              <h2 className="text-[15px] font-semibold text-slate-900 tracking-[-0.02em]">
+                Recent Feedback
+              </h2>
               <button
                 type="button"
                 onClick={() => navigate('/staff/feedback')}
-                className="text-xs font-semibold text-[#11574A] hover:underline"
+                className="text-xs font-semibold text-[#0F4C40] hover:underline"
               >
                 View All
               </button>
             </div>
 
             {feedback.length === 0 ? (
-              <div className="rounded-2xl border border-slate-200/70 bg-white p-5 text-center text-xs text-slate-400">
+              <div className="rounded-2xl border border-slate-200/75 bg-white p-5 text-center text-xs text-slate-400">
                 No feedback submitted yet.
               </div>
             ) : (
-              <div className="space-y-2.5">
+              <div className="space-y-2">
                 {feedback.slice(0, 3).map(f => (
-                  <div key={f.id} className="rounded-2xl border border-slate-200/70 bg-white p-4 text-xs space-y-1.5">
+                  <div
+                    key={f.id}
+                    className="porcelain-card rounded-2xl border border-slate-200/75 p-3.5 text-xs space-y-1.5"
+                  >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-0.5 text-amber-400">
                         {Array.from({ length: f.overallRating }).map((_, i) => (
                           <Star key={i} className="h-3.5 w-3.5 fill-amber-400" />
                         ))}
                       </div>
-                      <span className="text-[10px] text-slate-400">{formatTimeAgo(f.createdAt)}</span>
+                      <span className="text-[10.5px] font-mono tabular-nums text-slate-400">
+                        {formatTimeAgo(f.createdAt)}
+                      </span>
                     </div>
-                    <p className="font-bold text-slate-900 truncate">{f.apartmentRef}</p>
-                    {f.comments && <p className="text-slate-600 italic leading-relaxed">"{f.comments}"</p>}
+                    <p className="font-semibold text-slate-900 truncate">{f.apartmentRef}</p>
+                    {f.comments && (
+                      <p className="text-slate-500 leading-relaxed line-clamp-2">"{f.comments}"</p>
+                    )}
                   </div>
                 ))}
               </div>

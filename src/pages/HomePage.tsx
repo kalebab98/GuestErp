@@ -55,7 +55,7 @@ export const HomePage: React.FC = () => {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#061311] text-white flex flex-col justify-between font-sans antialiased selection:bg-[#1A7A68] selection:text-white">
+    <div className="relative min-h-[100dvh] overflow-hidden bg-[#061311] text-white flex flex-col justify-between font-sans antialiased selection:bg-[#1A7A68] selection:text-white">
       {/* Hardware-Accelerated Motion Design Background */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <div className="absolute inset-0 animate-drift-grid opacity-45" />
@@ -136,9 +136,10 @@ export const HomePage: React.FC = () => {
             </div>
           </div>
 
-          {/* Right: Cohesive Dark Glass Staff Command Center Login (5 Cols) */}
+          {/* Right: Double-Bezel Machined Dark Glass Staff Command Center Login (5 Cols) */}
           <div className="lg:col-span-5">
-            <div className="rounded-3xl bg-[#0B1E1B]/75 backdrop-blur-2xl border border-white/[0.12] p-7 sm:p-8 shadow-[0_24px_64px_rgba(0,0,0,0.5)] text-left space-y-6">
+            <div className="rounded-[2rem] bg-white/[0.04] p-1.5 ring-1 ring-white/[0.08] shadow-[0_28px_72px_-16px_rgba(0,0,0,0.65)]">
+              <div className="rounded-[1.6rem] bg-[#0B1E1B]/82 backdrop-blur-2xl ring-1 ring-white/[0.1] shadow-[inset_0_1px_0_rgba(255,255,255,0.14)] p-6 sm:p-8 text-left space-y-6">
               <div className="space-y-1.5">
                 <h2 className="text-xl font-bold tracking-tight text-white">
                   Staff Command Center
@@ -213,6 +214,7 @@ export const HomePage: React.FC = () => {
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </form>
+              </div>
             </div>
           </div>
         </div>

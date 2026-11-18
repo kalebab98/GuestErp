@@ -385,21 +385,23 @@ export const PortalConfigPage: React.FC = () => {
   return (
     <div className="space-y-6 text-left max-w-6xl">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
-            <Sliders className="h-5 w-5 text-[#11574A]" />
-            <span>Guest Portal Content & Data Manager</span>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-[-0.025em] text-slate-900 flex items-center gap-2">
+            <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-[#F2F7F5] ring-1 ring-[#0F4C40]/12 text-[#0F4C40]">
+              <Sliders className="h-4 w-4 stroke-[1.8]" />
+            </span>
+            <span>Guest Portal Content & Data</span>
           </h1>
-          <p className="text-xs text-slate-500">
-            Control 100% of Guest Portal content — every edit saves live to Supabase and updates all guest devices immediately
+          <p className="text-xs text-slate-500 mt-1">
+            Control 100% of Guest Portal content — every edit saves live to Supabase and pushes immediately to guest devices
           </p>
         </div>
 
         <Button
           size="sm"
           variant="outline"
-          className="text-xs gap-1.5 self-start sm:self-auto"
+          className="text-xs gap-1.5 rounded-full self-start sm:self-auto"
           onClick={() => {
             if (window.confirm('Reset all Guest Portal text, categories, popular cards, items, directory numbers, and FAQs back to defaults?')) {
               portalConfigService.resetDefaults();
@@ -439,7 +441,7 @@ export const PortalConfigPage: React.FC = () => {
             />
           </div>
           <div className="sm:col-span-2">
-            <Button type="submit" className="w-full h-10 text-xs gap-1.5">
+            <Button type="submit" className="w-full h-10 text-xs gap-1.5 rounded-xl">
               {wifiSaved ? <Check className="h-3.5 w-3.5" /> : <Wifi className="h-3.5 w-3.5" />}
               <span>{wifiSaved ? 'Saved' : 'Save Wi-Fi'}</span>
             </Button>
@@ -447,8 +449,8 @@ export const PortalConfigPage: React.FC = () => {
         </form>
       </Card>
 
-      {/* Navigation Tabs */}
-      <div className="flex flex-wrap gap-1.5 border-b border-slate-200 pb-3">
+      {/* Segmented Pill Navigation Bar */}
+      <div className="no-scrollbar flex items-center gap-1.5 overflow-x-auto rounded-2xl bg-white ring-1 ring-slate-900/[0.06] p-1.5 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
         {tabs.map(tab => {
           const Icon = tab.icon;
           const active = activeTab === tab.id;
@@ -457,13 +459,13 @@ export const PortalConfigPage: React.FC = () => {
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id)}
-              className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition-all ${
+              className={`shrink-0 inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold tabular-nums transition-all active:scale-[0.98] ${
                 active
-                  ? 'bg-[#11574A] text-white shadow-2xs'
-                  : 'bg-white text-slate-600 border border-slate-200/80 hover:bg-[#F0F7F5] hover:text-[#11574A]'
+                  ? 'bg-[#0F4C40] text-white shadow-[0_2px_10px_-3px_rgba(15,76,64,0.45)]'
+                  : 'text-slate-600 hover:bg-[#F6F8FA] hover:text-slate-900'
               }`}
             >
-              <Icon className="h-3.5 w-3.5" />
+              <Icon className="h-3.5 w-3.5 stroke-[1.75]" />
               <span>{tab.label}</span>
             </button>
           );

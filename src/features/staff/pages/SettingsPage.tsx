@@ -80,11 +80,13 @@ export const SettingsPage: React.FC = () => {
   return (
     <div className="space-y-6 text-left max-w-4xl">
       <div>
-        <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900 flex items-center gap-2">
-          <Settings className="h-5 w-5 text-[#11574A]" />
+        <h1 className="text-xl sm:text-2xl font-bold tracking-[-0.025em] text-slate-900 flex items-center gap-2">
+          <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-[#F2F7F5] ring-1 ring-[#0F4C40]/12 text-[#0F4C40]">
+            <Settings className="h-4 w-4 stroke-[1.8]" />
+          </span>
           <span>System Settings & Contact Info</span>
         </h1>
-        <p className="text-xs text-slate-500 mt-0.5">
+        <p className="text-xs text-slate-500 mt-1">
           All phone numbers, Wi-Fi credentials, building info, and SLA targets save live across the Guest Portal and Staff Dashboard.
         </p>
       </div>
