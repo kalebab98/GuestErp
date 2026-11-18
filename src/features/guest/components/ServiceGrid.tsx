@@ -91,7 +91,7 @@ export const ServiceGrid: React.FC<ServiceGridProps> = ({
           <button
             type="button"
             onClick={onToggleShowAll}
-            className="text-xs font-semibold text-[#0F4C40] hover:text-[#0B3B31] transition-colors"
+            className="shrink-0 whitespace-nowrap text-xs font-semibold text-[#0F4C40] hover:text-[#0B3B31] transition-colors"
           >
             {showAll ? 'Show less' : `All (${categories.length})`}
           </button>

@@ -525,7 +525,7 @@ export const GuestPortalPage: React.FC = () => {
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 stroke-[1.75]" />
           <input
             type="text"
-            placeholder="Search services, items, rides, pharmacy, or FAQs..."
+            placeholder="Search towels, laundry, RIDE, pharmacy..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             className="w-full rounded-2xl bg-white pl-10 pr-10 h-11 sm:h-12 text-xs sm:text-[13.5px] text-slate-900 placeholder:text-slate-400 ring-1 ring-slate-900/[0.07] shadow-[0_1px_2px_rgba(15,23,42,0.03),0_6px_18px_-12px_rgba(15,23,42,0.12)] focus:ring-2 focus:ring-[#0F4C40]/35 focus:outline-none transition-all"
@@ -609,22 +609,18 @@ export const GuestPortalPage: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Right: Compact Machined Smoked-Glass Wi-Fi Card with Copy + Instant Wi-Fi QR */}
+                  {/* Right: Zero-Truncation Machined Smoked-Glass Wi-Fi Card */}
                   <div className="lg:col-span-5">
                     <div className="rounded-2xl bg-white/[0.07] backdrop-blur-xl ring-1 ring-white/[0.13] shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] p-3.5 sm:p-4 space-y-2.5">
+                      {/* Header Row: Wi-Fi Label + QR & Copy Actions */}
                       <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-teal-400/15 ring-1 ring-teal-300/25 text-teal-200">
-                            <Wifi className="h-4 w-4 stroke-[1.75]" />
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-teal-400/15 ring-1 ring-teal-300/25 text-teal-200">
+                            <Wifi className="h-3.5 w-3.5 stroke-[1.8]" />
                           </div>
-                          <div className="min-w-0">
-                            <span className="block text-[9.5px] uppercase tracking-[0.12em] text-teal-200/75 font-semibold">
-                              Apartment Wi-Fi
-                            </span>
-                            <span className="block text-[13px] font-semibold text-white font-mono truncate">
-                              {wifi.networkName}
-                            </span>
-                          </div>
+                          <span className="text-[10.5px] uppercase tracking-[0.08em] text-teal-200/85 font-semibold truncate">
+                            Room Wi-Fi
+                          </span>
                         </div>
 
                         <div className="flex items-center gap-1.5 shrink-0">
@@ -641,7 +637,7 @@ export const GuestPortalPage: React.FC = () => {
                           <button
                             type="button"
                             onClick={handleCopyWifi}
-                            className={`inline-flex items-center gap-1 rounded-full px-3 h-8 text-[11px] font-semibold active:scale-95 transition-all ${
+                            className={`inline-flex items-center gap-1 rounded-full px-3 h-8 text-[11px] font-semibold active:scale-95 transition-all whitespace-nowrap ${
                               wifiCopied
                                 ? 'bg-emerald-400 text-slate-950'
                                 : 'bg-white text-[#0B231E] hover:bg-teal-50'
@@ -662,11 +658,20 @@ export const GuestPortalPage: React.FC = () => {
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between rounded-xl bg-black/25 px-3 py-2 ring-1 ring-white/[0.08]">
-                        <span className="text-[11px] text-teal-200/75 font-medium">Password</span>
-                        <span className="font-mono tabular-nums text-[12.5px] font-semibold tracking-wider text-white select-all">
-                          {wifi.password}
-                        </span>
+                      {/* Full Untruncated Network & Password Rows */}
+                      <div className="rounded-xl bg-black/25 ring-1 ring-white/[0.08] divide-y divide-white/[0.07]">
+                        <div className="flex items-center justify-between gap-2 px-3 py-2">
+                          <span className="text-[11px] text-teal-200/70 font-medium shrink-0">Network</span>
+                          <span className="font-mono text-[12.5px] font-semibold text-white truncate">
+                            {wifi.networkName}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between gap-2 px-3 py-2">
+                          <span className="text-[11px] text-teal-200/70 font-medium shrink-0">Password</span>
+                          <span className="font-mono tabular-nums text-[12.5px] font-semibold tracking-wide text-white select-all truncate">
+                            {wifi.password}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>

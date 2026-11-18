@@ -113,7 +113,7 @@ export const LocalProvidersSection: React.FC<LocalProvidersSectionProps> = ({
             Direct call, WhatsApp, or front desk delivery
           </p>
         </div>
-        <span className="text-[11px] font-mono tabular-nums text-slate-400">
+        <span className="shrink-0 whitespace-nowrap text-[11px] font-mono tabular-nums text-slate-400">
           {providers.length} contacts
         </span>
       </div>
@@ -309,12 +309,12 @@ export const LocalProvidersSection: React.FC<LocalProvidersSectionProps> = ({
                             key={provider.id}
                             className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 px-3 py-2.5 sm:px-4 sm:py-3 hover:bg-[#F9FBFD] transition-colors"
                           >
-                            <div className="min-w-0 space-y-0.5">
-                              <div className="flex items-center justify-between sm:justify-start gap-2">
-                                <span className="text-[13px] sm:text-[13.5px] font-semibold tracking-[-0.01em] text-slate-900 truncate">
+                            <div className="min-w-0 space-y-1">
+                              <div className="flex flex-wrap items-center justify-between sm:justify-start gap-x-2 gap-y-1">
+                                <span className="text-[13px] sm:text-[13.5px] font-semibold tracking-[-0.01em] text-slate-900 leading-snug">
                                   {provider.name}
                                 </span>
-                                <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-[#F6F8FA] ring-1 ring-slate-900/[0.05] px-2 py-0.5 text-[10px] font-medium text-slate-500">
+                                <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-[#F6F8FA] ring-1 ring-slate-900/[0.05] px-2 py-0.5 text-[10px] font-medium text-slate-500 whitespace-nowrap">
                                   <Clock className="h-2.5 w-2.5 text-[#0F4C40]" />
                                   {provider.hours}
                                 </span>

@@ -108,7 +108,7 @@ const DEFAULT_POPULAR_SERVICES: PopularServiceConfig[] = [
     categoryCode: 'housekeeping',
     presetText: 'Fresh towel replacement',
     imageUrl:
-      'https://images.unsplash.com/photo-1616046229478-9901c5536a45?auto=format&fit=crop&w=600&q=80',
+      'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=600&q=80',
     isActive: true,
   },
   {
