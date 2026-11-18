@@ -32,6 +32,8 @@ import {
   Check,
   ClipboardList,
   MessageSquareHeart,
+  ArrowRight,
+  X,
 } from 'lucide-react';
 
 export const GuestPortalPage: React.FC = () => {
@@ -303,10 +305,12 @@ export const GuestPortalPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center p-4 bg-slate-50">
+      <div className="porcelain-canvas flex min-h-[100dvh] flex-col items-center justify-center p-4">
         <div className="flex flex-col items-center space-y-3">
-          <div className="h-9 w-9 animate-spin rounded-full border-3 border-[#11574A] border-t-transparent" />
-          <p className="text-sm font-medium text-slate-600">Loading your stay portal...</p>
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#0F4C40] border-t-transparent" />
+          <p className="text-xs font-medium tracking-[-0.01em] text-slate-500">
+            Loading your stay portal...
+          </p>
         </div>
       </div>
     );
@@ -314,24 +318,30 @@ export const GuestPortalPage: React.FC = () => {
 
   if (authError || !session) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center p-6 bg-slate-50 text-center">
-        <div className="max-w-md w-full rounded-2xl bg-white p-7 shadow-sm border border-slate-200 space-y-4">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-rose-100 text-rose-600">
-            <AlertCircle className="h-6 w-6" />
-          </div>
-          <h2 className="text-lg font-bold text-slate-900">Access Restricted</h2>
-          <p className="text-xs text-slate-600 leading-relaxed">{authError}</p>
-          <div className="pt-2">
-            <Button
-              variant="outline"
-              className="w-full text-xs"
-              onClick={() => {
-                sessionStorage.removeItem('guestcare_token');
-                window.location.href = '/';
-              }}
-            >
-              Return to Home
-            </Button>
+      <div className="porcelain-canvas flex min-h-[100dvh] flex-col items-center justify-center p-5 text-center">
+        <div className="bezel-shell max-w-md w-full rounded-[1.5rem] p-1.5">
+          <div className="bezel-core rounded-[1.15rem] p-7 space-y-4">
+            <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-2xl bg-rose-50 ring-1 ring-rose-200/80 text-rose-600">
+              <AlertCircle className="h-5 w-5" />
+            </div>
+            <div className="space-y-1">
+              <h2 className="text-base font-semibold tracking-[-0.02em] text-slate-900">
+                Access Restricted
+              </h2>
+              <p className="text-xs text-slate-500 leading-relaxed">{authError}</p>
+            </div>
+            <div className="pt-1">
+              <Button
+                variant="outline"
+                className="w-full text-xs rounded-xl"
+                onClick={() => {
+                  sessionStorage.removeItem('guestcare_token');
+                  window.location.href = '/';
+                }}
+              >
+                Return to Home
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -343,166 +353,195 @@ export const GuestPortalPage: React.FC = () => {
   const unitLabel = session.apartmentRef.split(' - ')[0];
 
   return (
-    <div className="min-h-screen bg-white text-slate-900 font-sans pb-24 md:pb-12 antialiased">
-      {/* Top Navigation Bar: Responsive (Mobile + Tablet + PC) */}
-      <header className="sticky top-0 z-30 border-b border-slate-100 bg-white/95 backdrop-blur-md">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 sm:px-6 py-3">
-          {/* Brand Logo + FULL WORD ALWAYS SHOWN ON MOBILE, TABLET & PC */}
+    <div className="porcelain-canvas min-h-[100dvh] text-slate-900 font-sans pb-28 md:pb-14 antialiased">
+      {/* Frosted Porcelain Header Bar */}
+      <header className="sticky top-0 z-30 border-b border-slate-200/65 bg-[#F6F8FA]/80 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 sm:px-6 h-14 sm:h-16">
+          {/* Brand Lockup + Full Word + Live Apt Pill */}
           <div className="flex items-center gap-2.5">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#11574A] text-white font-black text-xs tracking-wider shadow-xs">
+            <span className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl bg-[#0F4C40] text-white font-bold text-[11px] tracking-wider shadow-[inset_0_1px_0_rgba(255,255,255,0.22),0_4px_12px_-4px_rgba(15,76,64,0.5)]">
               GC
             </span>
             <div className="text-left leading-tight">
-              <span className="block text-sm sm:text-base font-extrabold tracking-tight text-slate-900">
+              <span className="block text-[14px] sm:text-[15px] font-bold tracking-[-0.02em] text-slate-900">
                 {branding.portalBrandName || 'GuestCare'}
               </span>
               <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500">
-                <MapPin className="h-3 w-3 text-[#11574A]" />
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                 <span>Apt {unitLabel}</span>
               </span>
             </div>
           </div>
 
-          {/* Desktop / Tablet Navigation Links */}
-          <div className="hidden md:flex items-center gap-6 text-xs font-semibold text-slate-600">
+          {/* Desktop / Tablet Segmented Nav */}
+          <div className="hidden md:flex items-center gap-1 rounded-full bg-white/85 ring-1 ring-slate-900/[0.06] p-1 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
             <button
+              type="button"
               onClick={() => navigate('/portal/requests')}
-              className="inline-flex items-center gap-1.5 hover:text-[#11574A] transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-[#F2F7F5] hover:text-[#0F4C40] transition-colors"
             >
-              <ClipboardList className="h-4 w-4 text-[#11574A]" />
+              <ClipboardList className="h-3.5 w-3.5 text-[#0F4C40]" />
               <span>My Requests</span>
               {myRequests.length > 0 && (
-                <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[#11574A] px-1 text-[10px] text-white">
+                <span className="flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[#0F4C40] px-1 text-[10px] font-bold text-white tabular-nums">
                   {myRequests.length}
                 </span>
               )}
             </button>
 
             <button
+              type="button"
               onClick={() => setFeedbackOpen(true)}
-              className="inline-flex items-center gap-1.5 hover:text-[#11574A] transition-colors"
+              className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-rose-50/70 hover:text-rose-600 transition-colors"
             >
-              <MessageSquareHeart className="h-4 w-4 text-rose-500" />
-              <span>Private Feedback</span>
+              <MessageSquareHeart className="h-3.5 w-3.5 text-rose-500" />
+              <span>Feedback</span>
             </button>
           </div>
 
-          {/* Direct Call Front Desk */}
-          <div className="flex items-center gap-2">
-            <a
-              href={`tel:${contact.frontDeskPhone.replace(/\s+/g, '')}`}
-              className="inline-flex items-center gap-1.5 rounded-full bg-[#F0F7F5] px-3.5 py-2 text-xs font-semibold text-[#11574A] hover:bg-[#E2F0EC] transition-colors"
-              title="Call Front Desk"
-            >
-              <Phone className="h-3.5 w-3.5" />
-              <span>Front Desk</span>
-            </a>
-          </div>
+          {/* Crisp Direct Call Front Desk Pill */}
+          <a
+            href={`tel:${contact.frontDeskPhone.replace(/\s+/g, '')}`}
+            className="inline-flex items-center gap-1.5 rounded-full bg-white ring-1 ring-slate-900/[0.08] hover:ring-[#0F4C40]/35 px-3 sm:px-3.5 h-8 sm:h-9 text-[11.5px] sm:text-xs font-semibold text-slate-800 hover:text-[#0F4C40] shadow-[0_1px_2px_rgba(15,23,42,0.04)] active:scale-95 transition-all"
+            title="Call Front Desk"
+          >
+            <Phone className="h-3.5 w-3.5 text-[#0F4C40] stroke-[1.75]" />
+            <span>Front Desk</span>
+          </a>
         </div>
       </header>
 
-      {/* Main Content Area (Responsive: Mobile -> Tablet -> PC max-w-6xl) */}
-      <main className="mx-auto max-w-6xl px-4 sm:px-6 pt-5 sm:pt-7 space-y-6 sm:space-y-8 text-left">
+      {/* Main Content Container */}
+      <main className="mx-auto max-w-5xl px-4 sm:px-6 pt-4 sm:pt-6 space-y-6 sm:space-y-8 text-left">
         {/* Optional Staff Live Announcement Banner */}
         {branding.noticeBanner?.trim() && (
-          <div className="flex items-center gap-2.5 rounded-2xl border border-[#11574A]/20 bg-[#F0F7F5] px-4 py-2.5 text-xs font-medium text-[#11574A]">
-            <span className="h-2 w-2 rounded-full bg-[#11574A] shrink-0 animate-pulse" />
-            <span>{branding.noticeBanner}</span>
+          <div className="flex items-center gap-2.5 rounded-2xl bg-white ring-1 ring-[#0F4C40]/20 px-4 py-2.5 text-xs font-medium text-[#0F4C40] shadow-[0_2px_10px_-4px_rgba(15,76,64,0.12)] animate-fadeIn">
+            <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0 animate-pulse" />
+            <span className="leading-snug">{branding.noticeBanner}</span>
           </div>
         )}
 
-        {/* Search Bar */}
+        {/* Spotlight-Style Search Bar */}
         <div className="relative">
-          <Search className="absolute left-3.5 top-3 h-4 w-4 text-slate-400" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 stroke-[1.75]" />
           <input
             type="text"
-            placeholder="Search for a service or item (e.g. towels, laundry, coffee, wifi)..."
+            placeholder="Search services or items (towels, laundry, coffee, wifi)..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            className="w-full rounded-2xl bg-[#F6F8F8] pl-10 pr-4 py-2.5 sm:py-3 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 border border-transparent focus:border-[#11574A]/40 focus:bg-white focus:outline-none transition-all"
+            className="w-full rounded-2xl bg-white pl-10 pr-10 h-11 sm:h-12 text-xs sm:text-[13.5px] text-slate-900 placeholder:text-slate-400 ring-1 ring-slate-900/[0.07] shadow-[0_1px_2px_rgba(15,23,42,0.03),0_6px_18px_-12px_rgba(15,23,42,0.12)] focus:ring-2 focus:ring-[#0F4C40]/35 focus:outline-none transition-all"
           />
           {searchQuery && (
             <button
+              type="button"
               onClick={() => setSearchQuery('')}
-              className="absolute right-3 top-2.5 text-xs text-slate-400 hover:text-slate-600"
+              aria-label="Clear search"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-800 transition-colors"
             >
-              Clear
+              <X className="h-3.5 w-3.5" />
             </button>
           )}
         </div>
 
-        {/* Hero Card + Directly Visible Wi-Fi Password Box */}
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0F4F43] via-[#11574A] to-[#156758] p-5 sm:p-7 md:p-8 text-white shadow-lg">
-          <div className="absolute -top-12 -right-12 h-44 w-44 rounded-full bg-white/5 pointer-events-none" />
-          <div className="absolute -bottom-16 -left-16 h-48 w-48 rounded-full bg-black/10 pointer-events-none" />
+        {/* Double-Bezel Machined Obsidian-Emerald Hero + Glass Wi-Fi Card */}
+        <div className="bezel-shell rounded-[1.75rem] p-1.5">
+          <div
+            className="relative overflow-hidden rounded-[1.375rem] bg-[#0B231E] p-5 sm:p-7 md:p-8 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_20px_48px_-20px_rgba(11,35,30,0.65)]"
+            style={{
+              backgroundImage:
+                'radial-gradient(ellipse 70% 80% at 10% 0%, rgba(45, 212, 191, 0.22), transparent 58%), radial-gradient(ellipse 60% 70% at 95% 100%, rgba(16, 185, 129, 0.16), transparent 55%)',
+            }}
+          >
+            {/* Subtle architectural micro-dot texture */}
+            <div
+              className="pointer-events-none absolute inset-0 opacity-[0.12]"
+              style={{
+                backgroundImage:
+                  'radial-gradient(rgba(255,255,255,0.45) 0.75px, transparent 0.75px)',
+                backgroundSize: '18px 18px',
+              }}
+            />
 
-          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-5 items-center">
-            {/* Left: Welcome Headline */}
-            <div className="lg:col-span-7 space-y-2.5">
-              <span className="inline-block text-[10px] sm:text-xs font-mono font-semibold uppercase tracking-widest text-teal-200">
-                Welcome, {session.guestName} • Apt {unitLabel}
-              </span>
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight text-white leading-tight">
-                {branding.heroHeadline}
-              </h1>
-              <p className="text-xs sm:text-sm text-teal-100/90 leading-relaxed font-light max-w-lg">
-                {branding.heroSubtitle}
-              </p>
-              <div className="pt-1">
-                <Button
-                  onClick={() => {
-                    const target = document.getElementById('service-categories-section');
-                    target?.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                  className="bg-white text-[#11574A] hover:bg-teal-50 font-bold text-xs sm:text-sm rounded-xl px-5 py-2.5 shadow-sm"
-                >
-                  {branding.heroCtaLabel || 'Explore Services'}
-                </Button>
-              </div>
-            </div>
-
-            {/* Right: Directly Visible Apartment Wi-Fi & Password Card */}
-            <div className="lg:col-span-5">
-              <div className="rounded-2xl bg-black/20 backdrop-blur-md border border-white/15 p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/15 text-teal-200">
-                      <Wifi className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <span className="block text-[10px] uppercase tracking-wider text-teal-200 font-semibold">
-                        Apartment Wi-Fi
-                      </span>
-                      <span className="block text-sm font-bold text-white font-mono">
-                        {wifi.networkName}
-                      </span>
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={handleCopyWifi}
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-white px-3 py-1.5 text-xs font-bold text-[#11574A] hover:bg-teal-50 active:scale-95 transition-all shadow-xs"
-                  >
-                    {wifiCopied ? (
-                      <>
-                        <Check className="h-3.5 w-3.5 text-emerald-600" />
-                        <span>Copied</span>
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="h-3.5 w-3.5" />
-                        <span>Copy</span>
-                      </>
-                    )}
-                  </button>
+            <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-7 items-center">
+              {/* Left: Editorial Welcome & Precision CTA */}
+              <div className="lg:col-span-7 space-y-3">
+                <div className="inline-flex items-center gap-2 rounded-full bg-white/[0.08] ring-1 ring-white/[0.14] px-3 py-1 text-[11px] font-medium text-teal-100 backdrop-blur-md">
+                  <MapPin className="h-3 w-3 text-teal-300" />
+                  <span>
+                    {session.guestName} <span className="text-white/40 mx-1">•</span> Apt {unitLabel}
+                  </span>
                 </div>
 
-                <div className="flex items-center justify-between rounded-xl bg-black/25 px-3.5 py-2 border border-white/10">
-                  <span className="text-[11px] text-teal-200 font-medium">Password</span>
-                  <span className="font-mono text-sm font-bold tracking-wider text-white select-all">
-                    {wifi.password}
-                  </span>
+                <h1 className="text-[22px] sm:text-[28px] md:text-[32px] font-bold tracking-[-0.03em] text-white leading-[1.12] [text-wrap:balance]">
+                  {branding.heroHeadline}
+                </h1>
+
+                <p className="text-xs sm:text-[13.5px] text-teal-100/80 leading-relaxed max-w-lg font-normal">
+                  {branding.heroSubtitle}
+                </p>
+
+                <div className="pt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const target = document.getElementById('service-categories-section');
+                      target?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    className="group inline-flex items-center gap-2 rounded-full bg-white hover:bg-teal-50 text-[#0B231E] font-semibold text-xs sm:text-[13px] px-4.5 py-2.5 shadow-[0_6px_20px_-6px_rgba(0,0,0,0.4)] active:scale-95 transition-all"
+                  >
+                    <span>{branding.heroCtaLabel || 'Explore Services'}</span>
+                    <ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Right: Machined Smoked-Glass Wi-Fi Card */}
+              <div className="lg:col-span-5">
+                <div className="rounded-2xl bg-white/[0.06] backdrop-blur-xl ring-1 ring-white/[0.12] shadow-[inset_0_1px_0_rgba(255,255,255,0.12)] p-4 space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-teal-400/15 ring-1 ring-teal-300/25 text-teal-200">
+                        <Wifi className="h-4 w-4 stroke-[1.75]" />
+                      </div>
+                      <div className="min-w-0">
+                        <span className="block text-[10px] uppercase tracking-[0.12em] text-teal-200/75 font-semibold">
+                          Apartment Wi-Fi
+                        </span>
+                        <span className="block text-[13.5px] font-semibold text-white font-mono truncate">
+                          {wifi.networkName}
+                        </span>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleCopyWifi}
+                      className={`shrink-0 inline-flex items-center gap-1.5 rounded-full px-3 h-7.5 py-1 text-[11px] font-semibold active:scale-95 transition-all ${
+                        wifiCopied
+                          ? 'bg-emerald-400 text-slate-950'
+                          : 'bg-white text-[#0B231E] hover:bg-teal-50'
+                      }`}
+                    >
+                      {wifiCopied ? (
+                        <>
+                          <Check className="h-3 w-3 stroke-[2.5]" />
+                          <span>Copied</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="h-3 w-3" />
+                          <span>Copy</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-between rounded-xl bg-black/25 px-3.5 py-2 ring-1 ring-white/[0.08]">
+                    <span className="text-[11px] text-teal-200/75 font-medium">Password</span>
+                    <span className="font-mono tabular-nums text-[13px] font-semibold tracking-wider text-white select-all">
+                      {wifi.password}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -511,26 +550,26 @@ export const GuestPortalPage: React.FC = () => {
 
         {/* Action Banner: Guest Confirmation Pending */}
         {resolvedPendingConfirmation.length > 0 && (
-          <div className="rounded-2xl border border-emerald-300 bg-emerald-50/90 p-4 sm:p-5 text-left shadow-xs space-y-2.5 animate-fadeIn">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-emerald-950 font-bold text-xs sm:text-sm">
+          <div className="rounded-2xl bg-white ring-1 ring-emerald-500/30 shadow-[0_8px_24px_-12px_rgba(16,185,129,0.22)] p-4 sm:p-5 text-left space-y-3 animate-fadeIn">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-emerald-950 font-semibold text-xs sm:text-sm">
                 <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
                 <span>Service Marked Completed by Staff</span>
               </div>
-              <span className="rounded-full bg-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-900 uppercase">
+              <span className="rounded-full bg-emerald-50 ring-1 ring-emerald-200 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-700">
                 Action Required
               </span>
             </div>
-            <p className="text-xs text-emerald-900 leading-relaxed">
-              Our team has marked "<strong>{resolvedPendingConfirmation[0].title}</strong>" as resolved. Was this completed to your full satisfaction?
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Our team marked "<strong className="text-slate-900">{resolvedPendingConfirmation[0].title}</strong>" as resolved. Was everything completed to your satisfaction?
             </p>
             <Button
               size="sm"
               variant="success"
-              className="w-full text-xs font-semibold py-2"
+              className="w-full sm:w-auto text-xs font-semibold rounded-xl px-4 py-2"
               onClick={() => setConfirmModalRequest(resolvedPendingConfirmation[0])}
             >
-              Confirm Satisfaction or Reopen Ticket
+              Confirm Satisfaction or Reopen
             </Button>
           </div>
         )}
@@ -539,23 +578,29 @@ export const GuestPortalPage: React.FC = () => {
         {activeRequests.length > 0 && resolvedPendingConfirmation.length === 0 && (
           <div
             onClick={() => navigate('/portal/requests')}
-            className="flex items-center justify-between rounded-2xl bg-[#FFFDF7] border border-amber-200/90 p-3.5 sm:p-4 cursor-pointer hover:border-amber-300 transition-colors shadow-2xs"
+            role="button"
+            tabIndex={0}
+            onKeyDown={e => {
+              if (e.key === 'Enter' || e.key === ' ') navigate('/portal/requests');
+            }}
+            className="porcelain-card flex items-center justify-between gap-3 rounded-2xl border border-amber-200/80 p-3.5 sm:p-4 cursor-pointer active:scale-[0.995]"
           >
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-100 text-amber-900">
-                <Clock className="h-4 w-4 animate-spin" />
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-50 ring-1 ring-amber-200/70 text-amber-600">
+                <Clock className="h-4 w-4" />
               </div>
-              <div>
-                <p className="text-xs font-bold text-amber-950">
-                  {activeRequests.length} Active Request in progress
+              <div className="min-w-0">
+                <p className="text-xs font-semibold text-slate-900 tabular-nums">
+                  {activeRequests.length} Active Request{activeRequests.length !== 1 ? 's' : ''} in progress
                 </p>
-                <p className="text-[11px] text-amber-800 truncate max-w-[220px] sm:max-w-md">
+                <p className="text-[11px] text-slate-500 truncate max-w-[200px] sm:max-w-md">
                   {activeRequests[0].title}
                 </p>
               </div>
             </div>
-            <span className="text-xs font-bold text-[#11574A] hover:underline shrink-0">
-              Track Status &rarr;
+            <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-[#F2F7F5] px-3 py-1 text-[11px] font-semibold text-[#0F4C40]">
+              <span>Track</span>
+              <ArrowRight className="h-3 w-3" />
             </span>
           </div>
         )}
@@ -592,36 +637,43 @@ export const GuestPortalPage: React.FC = () => {
         {!searchQuery && <GuestFAQSection faqs={faqs} />}
 
         {/* Section 5: Feedback & 24/7 Front Desk */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-          <div className="flex items-center justify-between rounded-2xl border border-slate-200/70 bg-white p-4 shadow-2xs">
-            <div className="space-y-0.5 pr-2">
-              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-rose-500">
-                Direct to Management
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+          <div className="porcelain-card flex items-center justify-between gap-3 rounded-2xl border border-slate-200/75 p-4">
+            <div className="space-y-0.5 min-w-0">
+              <span className="inline-flex items-center gap-1 text-[10.5px] font-semibold text-rose-500">
+                <MessageSquareHeart className="h-3 w-3" />
+                <span>Direct to Management</span>
               </span>
-              <h3 className="text-sm font-bold text-slate-900">Private Feedback</h3>
-              <p className="text-xs text-slate-500">Share your thoughts before checkout</p>
+              <h3 className="text-[13.5px] font-semibold tracking-[-0.01em] text-slate-900">
+                Private Feedback
+              </h3>
+              <p className="text-[11.5px] text-slate-500">Share thoughts anytime during your stay</p>
             </div>
-            <Button
-              size="sm"
-              variant="outline"
+            <button
+              type="button"
               onClick={() => setFeedbackOpen(true)}
-              className="text-xs border-slate-200 hover:border-rose-400 shrink-0"
+              className="shrink-0 rounded-full ring-1 ring-slate-200 bg-white hover:ring-rose-300 hover:text-rose-600 px-3.5 h-8 text-xs font-semibold text-slate-700 active:scale-95 transition-all"
             >
               Rate Stay
-            </Button>
+            </button>
           </div>
 
-          <div className="flex items-center justify-between rounded-2xl border border-slate-200/70 bg-white p-4 shadow-2xs">
-            <div className="space-y-0.5 pr-2">
-              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#11574A]">
-                24/7 Front Desk
+          <div className="porcelain-card flex items-center justify-between gap-3 rounded-2xl border border-slate-200/75 p-4">
+            <div className="space-y-0.5 min-w-0">
+              <span className="inline-flex items-center gap-1 text-[10.5px] font-semibold text-[#0F4C40]">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                <span>24/7 Front Desk</span>
               </span>
-              <h3 className="text-sm font-bold text-slate-900">Need Immediate Help?</h3>
-              <p className="text-xs text-slate-500 font-mono">{contact.frontDeskPhone}</p>
+              <h3 className="text-[13.5px] font-semibold tracking-[-0.01em] text-slate-900">
+                Need Immediate Help?
+              </h3>
+              <p className="text-[11.5px] text-slate-500 font-mono tabular-nums">
+                {contact.frontDeskPhone}
+              </p>
             </div>
             <a
               href={`tel:${contact.frontDeskPhone.replace(/\s+/g, '')}`}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-[#11574A] px-3.5 py-2 text-xs font-semibold text-white hover:bg-[#0D443A] transition-colors shrink-0"
+              className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-[#0F4C40] hover:bg-[#0B3B31] px-3.5 h-8 text-xs font-semibold text-white shadow-[0_2px_10px_-2px_rgba(15,76,64,0.4)] active:scale-95 transition-all"
             >
               <Phone className="h-3 w-3" />
               <span>Call Desk</span>

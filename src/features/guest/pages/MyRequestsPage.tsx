@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { tokenService } from '@/lib/tokenService';
 import { requestService } from '@/features/requests/requestService';
@@ -6,9 +6,9 @@ import { portalConfigService } from '@/features/config/portalConfigService';
 import { PortalSession, GuestRequest } from '@/types/guestcare';
 import { StatusBadge, PriorityBadge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
 import { RequestTimeline } from '../components/RequestTimeline';
 import { ConfirmResolutionModal } from '../components/ConfirmResolutionModal';
+import { PrivateFeedbackModal } from '../components/PrivateFeedbackModal';
 import { GuestBottomNav } from '../components/GuestBottomNav';
 import {
   ArrowLeft,
@@ -20,16 +20,21 @@ import {
   ChevronUp,
   Package,
   Plus,
+  Inbox,
 } from 'lucide-react';
 import { formatDate, formatTimeAgo } from '@/lib/utils';
+
+type RequestFilter = 'all' | 'active' | 'completed';
 
 export const MyRequestsPage: React.FC = () => {
   const navigate = useNavigate();
   const [session, setSession] = useState<PortalSession | null>(null);
   const [requests, setRequests] = useState<GuestRequest[]>([]);
+  const [filter, setFilter] = useState<RequestFilter>('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [replyText, setReplyText] = useState<Record<string, string>>({});
   const [confirmModalRequest, setConfirmModalRequest] = useState<GuestRequest | null>(null);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
 
   useEffect(() => {
     let activeReservationRef: string | null = null;
@@ -97,144 +102,223 @@ export const MyRequestsPage: React.FC = () => {
     });
   };
 
+  const handleFeedbackSubmit = async (feedback: {
+    overallRating: number;
+    cleanlinessRating?: number;
+    staffRating?: number;
+    comfortRating?: number;
+    comments?: string;
+    isAnonymous?: boolean;
+  }) => {
+    if (!session) return;
+    await requestService.submitFeedback({
+      reservationRef: session.reservationRef,
+      apartmentRef: session.apartmentRef,
+      guestName: session.guestName,
+      ...feedback,
+    });
+  };
+
   const activeCount = requests.filter(r => !['closed', 'cancelled'].includes(r.status)).length;
+  const completedCount = requests.length - activeCount;
+
+  const visibleRequests = useMemo(() => {
+    if (filter === 'active') {
+      return requests.filter(r => !['closed', 'cancelled'].includes(r.status));
+    }
+    if (filter === 'completed') {
+      return requests.filter(r => ['closed', 'cancelled'].includes(r.status));
+    }
+    return requests;
+  }, [requests, filter]);
+
+  const unitLabel = session?.apartmentRef.split(' - ')[0];
 
   return (
-    <div className="min-h-screen bg-slate-50/50 text-slate-900 font-sans pb-24 md:pb-12 antialiased text-left">
-      {/* Top Header */}
-      <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/95 backdrop-blur-md">
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-4 sm:px-6 py-3">
-          <Button
-            variant="ghost"
-            size="sm"
+    <div className="porcelain-canvas min-h-[100dvh] text-slate-900 font-sans pb-28 md:pb-14 antialiased text-left">
+      {/* Frosted Porcelain Header */}
+      <header className="sticky top-0 z-30 border-b border-slate-200/65 bg-[#F6F8FA]/80 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-4xl items-center justify-between px-4 sm:px-6 h-14 sm:h-16">
+          <button
+            type="button"
             onClick={() => navigate('/portal')}
-            className="text-xs text-slate-700 gap-1.5 -ml-2 hover:bg-slate-100"
+            className="inline-flex items-center gap-1.5 rounded-full bg-white ring-1 ring-slate-900/[0.07] hover:ring-[#0F4C40]/35 px-3 h-8 text-xs font-semibold text-slate-700 hover:text-[#0F4C40] shadow-[0_1px_2px_rgba(15,23,42,0.03)] active:scale-95 transition-all"
           >
-            <ArrowLeft className="h-4 w-4" />
-            <span>Back to Services</span>
-          </Button>
+            <ArrowLeft className="h-3.5 w-3.5 stroke-[2]" />
+            <span>Back to Portal</span>
+          </button>
 
-          <span className="text-xs font-semibold text-slate-500">
-            {requests.length} Request{requests.length !== 1 ? 's' : ''}
-          </span>
+          <div className="flex items-center gap-2">
+            {unitLabel && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white ring-1 ring-slate-900/[0.06] px-2.5 py-1 text-[11px] font-medium text-slate-600">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                <span>Apt {unitLabel}</span>
+              </span>
+            )}
+            <span className="text-[11px] font-mono tabular-nums font-medium text-slate-400">
+              {requests.length} total
+            </span>
+          </div>
         </div>
       </header>
 
       {/* Main Container */}
       <main className="mx-auto max-w-4xl px-4 sm:px-6 pt-5 sm:pt-7 space-y-5">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-[-0.025em]">
               My Requests & History
             </h1>
             <p className="text-xs text-slate-500 mt-0.5">
-              Live updates, delivery tracking, and direct messaging with staff
+              Live progress updates, delivery tracking, and direct staff messaging
             </p>
           </div>
 
-          <Button
-            size="sm"
+          <button
+            type="button"
             onClick={() => navigate('/portal')}
-            className="bg-[#11574A] hover:bg-[#0D443A] text-white text-xs rounded-xl gap-1.5"
+            className="self-start sm:self-auto inline-flex items-center gap-1.5 rounded-full bg-[#0F4C40] hover:bg-[#0B3B31] text-white px-4 h-9 text-xs font-semibold shadow-[0_2px_10px_-2px_rgba(15,76,64,0.4)] active:scale-95 transition-all"
           >
-            <Plus className="h-3.5 w-3.5" />
+            <Plus className="h-3.5 w-3.5 stroke-[2.2]" />
             <span>New Request</span>
-          </Button>
+          </button>
         </div>
 
-        {requests.length === 0 ? (
-          <div className="rounded-3xl border border-dashed border-slate-200 bg-white p-10 text-center space-y-3">
-            <p className="text-sm font-bold text-slate-800">No requests submitted yet</p>
-            <p className="text-xs text-slate-500 max-w-xs mx-auto leading-relaxed">
-              Whenever you need housekeeping, extra towels, maintenance, or late checkout, you can place a request here.
-            </p>
-            <Button
-              size="sm"
-              onClick={() => navigate('/portal')}
-              className="bg-[#11574A] text-white text-xs"
-            >
-              Browse Services
-            </Button>
+        {/* Segmented Filter Bar */}
+        {requests.length > 0 && (
+          <div className="inline-flex items-center gap-1 rounded-full bg-white ring-1 ring-slate-900/[0.06] p-1 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
+            {[
+              { id: 'all' as const, label: `All (${requests.length})` },
+              { id: 'active' as const, label: `Active (${activeCount})` },
+              { id: 'completed' as const, label: `Completed (${completedCount})` },
+            ].map(tab => {
+              const isSelected = filter === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setFilter(tab.id)}
+                  className={`rounded-full px-3.5 py-1.5 text-[11.5px] font-semibold tabular-nums transition-all ${
+                    isSelected
+                      ? 'bg-[#0F4C40] text-white shadow-[0_2px_8px_-2px_rgba(15,76,64,0.4)]'
+                      : 'text-slate-500 hover:text-slate-900'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {visibleRequests.length === 0 ? (
+          <div className="bezel-shell rounded-[1.5rem] p-1.5">
+            <div className="bezel-core rounded-[1.15rem] p-10 text-center space-y-3">
+              <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-2xl bg-[#F2F7F5] text-[#0F4C40]">
+                <Inbox className="h-5 w-5 stroke-[1.6]" />
+              </div>
+              <p className="text-sm font-semibold text-slate-900">
+                {requests.length === 0 ? 'No requests submitted yet' : 'No requests in this view'}
+              </p>
+              <p className="text-xs text-slate-500 max-w-xs mx-auto leading-relaxed">
+                Whenever you need housekeeping, extra towels, laundry, maintenance, or local delivery, tap below to send a request.
+              </p>
+              <button
+                type="button"
+                onClick={() => navigate('/portal')}
+                className="inline-flex items-center gap-1.5 rounded-full bg-[#0F4C40] hover:bg-[#0B3B31] text-white px-4 h-9 text-xs font-semibold active:scale-95 transition-all"
+              >
+                Browse Services
+              </button>
+            </div>
           </div>
         ) : (
           <div className="space-y-3">
-            {requests.map(req => {
-              const isExpanded = expandedId === req.id || requests.length === 1;
+            {visibleRequests.map(req => {
+              const isExpanded = expandedId === req.id || visibleRequests.length === 1;
               const guestVisibleComments = (req.comments || []).filter(c => !c.isInternal);
 
               return (
-                <Card
+                <div
                   key={req.id}
-                  className={`overflow-hidden rounded-2xl border transition-all ${
+                  className={`overflow-hidden rounded-2xl bg-white border transition-all duration-200 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_8px_24px_-16px_rgba(15,23,42,0.1)] ${
                     req.status === 'resolved'
-                      ? 'border-emerald-300 ring-2 ring-emerald-300/20'
+                      ? 'border-emerald-300/90 ring-1 ring-emerald-400/25'
                       : req.status === 'reopened'
-                      ? 'border-rose-300 ring-2 ring-rose-300/20'
-                      : 'border-slate-200/80 bg-white'
+                      ? 'border-rose-300/90 ring-1 ring-rose-400/25'
+                      : 'border-slate-200/75'
                   }`}
                 >
-                  {/* Summary Bar */}
+                  {/* Summary Header */}
                   <div
                     onClick={() => setExpandedId(isExpanded ? null : req.id)}
-                    className="p-4 sm:p-5 cursor-pointer hover:bg-slate-50/70 transition-colors"
+                    className="p-4 sm:p-5 cursor-pointer hover:bg-[#FAFBFD] transition-colors"
                   >
-                    <div className="flex items-center justify-between gap-2 mb-2">
-                      <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-between gap-2 mb-2.5">
+                      <div className="flex items-center gap-1.5">
                         <StatusBadge status={req.status} />
                         <PriorityBadge priority={req.priority} />
                       </div>
-                      <span className="text-xs text-slate-400 font-mono">
+                      <span className="text-[11px] text-slate-400 font-mono tabular-nums">
                         {formatTimeAgo(req.createdAt)}
                       </span>
                     </div>
 
-                    <h3 className="text-sm sm:text-base font-bold text-slate-900 leading-snug">
+                    <h3 className="text-[14px] sm:text-[15.5px] font-semibold tracking-[-0.015em] text-slate-900 leading-snug">
                       {req.title}
                     </h3>
-                    <p className="text-xs text-slate-600 mt-1 line-clamp-2 leading-relaxed">
+                    <p className="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed">
                       {req.description}
                     </p>
 
                     {/* Requested item pills */}
                     {req.requestedItems && req.requestedItems.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 mt-2.5 pt-2 border-t border-slate-100">
+                      <div className="flex flex-wrap gap-1.5 mt-3 pt-2.5 border-t border-slate-100">
                         {req.requestedItems.map((item, i) => (
                           <span
                             key={i}
-                            className="inline-flex items-center gap-1 rounded-md bg-[#F0F7F5] px-2 py-0.5 text-[11px] font-semibold text-[#11574A]"
+                            className="inline-flex items-center gap-1 rounded-lg bg-[#F2F7F5] ring-1 ring-[#0F4C40]/[0.08] px-2 py-0.5 text-[11px] font-semibold text-[#0F4C40] tabular-nums"
                           >
                             <Package className="h-3 w-3" />
-                            <span>{item.quantity}x {item.name}</span>
+                            <span>
+                              {item.quantity}x {item.name}
+                            </span>
                           </span>
                         ))}
                       </div>
                     )}
 
-                    <div className="flex items-center justify-between pt-3 mt-2 border-t border-slate-100 text-xs text-slate-500">
-                      <span className="font-mono text-[11px] text-slate-400">{req.ticketNumber}</span>
-                      <div className="flex items-center gap-1 text-[#11574A] font-semibold text-xs">
-                        <span>{isExpanded ? 'Hide Details' : 'View Timeline & Notes'}</span>
-                        {isExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                    <div className="flex items-center justify-between pt-3 mt-3 border-t border-slate-100 text-xs">
+                      <span className="font-mono tabular-nums text-[11px] text-slate-400">
+                        {req.ticketNumber}
+                      </span>
+                      <div className="inline-flex items-center gap-1 text-[#0F4C40] font-semibold text-[11.5px]">
+                        <span>{isExpanded ? 'Hide Details' : 'Timeline & Messages'}</span>
+                        {isExpanded ? (
+                          <ChevronUp className="h-3.5 w-3.5" />
+                        ) : (
+                          <ChevronDown className="h-3.5 w-3.5" />
+                        )}
                       </div>
                     </div>
                   </div>
 
                   {/* Resolution Prompt Banner */}
                   {req.status === 'resolved' && (
-                    <div className="bg-emerald-50 px-4 sm:px-5 py-3.5 border-t border-b border-emerald-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="bg-emerald-50/75 px-4 sm:px-5 py-3.5 border-t border-b border-emerald-200/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div className="text-xs text-emerald-950">
-                        <p className="font-bold flex items-center gap-1.5">
+                        <p className="font-semibold flex items-center gap-1.5">
                           <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
                           <span>Staff marked this request as resolved.</span>
                         </p>
-                        <p className="text-[11px] text-emerald-800 mt-0.5">
-                          Please confirm if everything is working to your satisfaction.
+                        <p className="text-[11px] text-emerald-800/90 mt-0.5">
+                          Please confirm if everything is completed to your satisfaction.
                         </p>
                       </div>
                       <Button
                         size="sm"
                         variant="success"
-                        className="text-xs shrink-0 font-semibold px-4"
+                        className="text-xs shrink-0 font-semibold rounded-full px-4"
                         onClick={() => setConfirmModalRequest(req)}
                       >
                         Confirm or Reopen
@@ -244,10 +328,10 @@ export const MyRequestsPage: React.FC = () => {
 
                   {/* Reopened Alert */}
                   {req.status === 'reopened' && (
-                    <div className="bg-rose-50 px-4 sm:px-5 py-3 border-t border-b border-rose-200 text-xs text-rose-900 flex items-start gap-2">
+                    <div className="bg-rose-50/80 px-4 sm:px-5 py-3 border-t border-b border-rose-200/70 text-xs text-rose-900 flex items-start gap-2">
                       <AlertTriangle className="h-4 w-4 text-rose-600 shrink-0 mt-0.5" />
                       <div>
-                        <span className="font-bold">Reopened by you.</span>
+                        <span className="font-semibold">Reopened by you.</span>
                         <p className="text-rose-700 text-[11px] mt-0.5">
                           {req.reopenReason || 'Priority escalation sent to duty manager.'}
                         </p>
@@ -257,21 +341,25 @@ export const MyRequestsPage: React.FC = () => {
 
                   {/* Expanded Body (Timeline, Photos, Messaging) */}
                   {isExpanded && (
-                    <div className="px-4 sm:px-5 pb-5 pt-3 border-t border-slate-100 space-y-4 bg-slate-50/50">
+                    <div className="px-4 sm:px-5 pb-5 pt-4 border-t border-slate-100 space-y-5 bg-[#FAFBFD]">
                       {/* Attached photos */}
                       {req.attachments && req.attachments.length > 0 && (
                         <div>
-                          <p className="text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-slate-400 mb-2">
                             Attached Photos ({req.attachments.length})
                           </p>
                           <div className="flex flex-wrap gap-2">
                             {req.attachments.map((att, idx) => (
                               <div
                                 key={idx}
-                                className="h-16 w-16 rounded-xl overflow-hidden border border-slate-200 bg-white"
+                                className="h-16 w-16 rounded-xl overflow-hidden ring-1 ring-slate-900/[0.08] bg-white"
                               >
                                 <img
-                                  src={att.filePath.startsWith('http') || att.filePath.startsWith('data:') ? att.filePath : 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=200&q=80'}
+                                  src={
+                                    att.filePath.startsWith('http') || att.filePath.startsWith('data:')
+                                      ? att.filePath
+                                      : 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&w=200&q=80'
+                                  }
                                   alt={att.fileName}
                                   className="h-full w-full object-cover"
                                 />
@@ -284,15 +372,17 @@ export const MyRequestsPage: React.FC = () => {
                       {/* Timeline */}
                       <RequestTimeline request={req} />
 
-                      {/* Messaging with Staff */}
-                      <div className="pt-3 border-t border-slate-200 space-y-3">
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                          <MessageSquare className="h-3.5 w-3.5" />
+                      {/* Direct Staff Messaging */}
+                      <div className="pt-4 border-t border-slate-200/70 space-y-3">
+                        <h4 className="text-[11px] font-semibold uppercase tracking-[0.06em] text-slate-400 flex items-center gap-1.5">
+                          <MessageSquare className="h-3.5 w-3.5 text-[#0F4C40]" />
                           <span>Direct Staff Messaging</span>
                         </h4>
 
                         {guestVisibleComments.length === 0 ? (
-                          <p className="text-xs text-slate-400 italic">No messages yet. Send a note below if needed.</p>
+                          <p className="text-xs text-slate-400">
+                            No messages yet. Send a quick note to the team below if needed.
+                          </p>
                         ) : (
                           <div className="space-y-2">
                             {guestVisibleComments.map(c => {
@@ -300,17 +390,25 @@ export const MyRequestsPage: React.FC = () => {
                               return (
                                 <div
                                   key={c.id}
-                                  className={`rounded-2xl p-3 text-xs leading-relaxed ${
+                                  className={`rounded-2xl px-3.5 py-2.5 text-xs leading-relaxed ${
                                     isGuest
-                                      ? 'bg-[#11574A] text-white ml-6 shadow-xs'
-                                      : 'bg-white text-slate-800 border border-slate-200 mr-6 shadow-2xs'
+                                      ? 'bg-[#0F4C40] text-white ml-8 shadow-[0_4px_14px_-6px_rgba(15,76,64,0.45)]'
+                                      : 'bg-white text-slate-800 ring-1 ring-slate-900/[0.06] mr-8 shadow-[0_1px_2px_rgba(15,23,42,0.03)]'
                                   }`}
                                 >
-                                  <div className="flex items-center justify-between gap-2 mb-1">
-                                    <span className={`font-semibold ${isGuest ? 'text-teal-200' : 'text-slate-900'}`}>
+                                  <div className="flex items-center justify-between gap-2 mb-0.5">
+                                    <span
+                                      className={`text-[11px] font-semibold ${
+                                        isGuest ? 'text-teal-200' : 'text-slate-900'
+                                      }`}
+                                    >
                                       {c.authorName}
                                     </span>
-                                    <span className={`text-[10px] ${isGuest ? 'text-teal-300/80' : 'text-slate-400'}`}>
+                                    <span
+                                      className={`text-[10px] font-mono tabular-nums ${
+                                        isGuest ? 'text-teal-200/75' : 'text-slate-400'
+                                      }`}
+                                    >
                                       {formatDate(c.createdAt)}
                                     </span>
                                   </div>
@@ -321,7 +419,7 @@ export const MyRequestsPage: React.FC = () => {
                           </div>
                         )}
 
-                        {/* Reply box */}
+                        {/* Reply input */}
                         {req.status !== 'closed' && (
                           <div className="flex items-center gap-2 pt-1">
                             <input
@@ -334,22 +432,23 @@ export const MyRequestsPage: React.FC = () => {
                               onKeyDown={e => {
                                 if (e.key === 'Enter') handleSendReply(req.id);
                               }}
-                              className="flex-1 rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:border-[#11574A] focus:outline-none focus:ring-1 focus:ring-[#11574A]"
+                              className="flex-1 rounded-full bg-white ring-1 ring-slate-900/[0.08] px-4 h-9 text-xs text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-[#0F4C40]/40 focus:outline-none transition-all"
                             />
-                            <Button
-                              size="sm"
+                            <button
+                              type="button"
                               onClick={() => handleSendReply(req.id)}
                               disabled={!replyText[req.id]?.trim()}
-                              className="bg-[#11574A] hover:bg-[#0D443A] text-white text-xs px-3"
+                              aria-label="Send message"
+                              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#0F4C40] hover:bg-[#0B3B31] text-white disabled:opacity-35 active:scale-95 transition-all"
                             >
                               <Send className="h-3.5 w-3.5" />
-                            </Button>
+                            </button>
                           </div>
                         )}
                       </div>
                     </div>
                   )}
-                </Card>
+                </div>
               );
             })}
           </div>
@@ -364,13 +463,20 @@ export const MyRequestsPage: React.FC = () => {
         onConfirm={handleConfirmResolution}
       />
 
-      {/* Mobile Sticky Bottom Nav */}
+      {/* Private Feedback Modal */}
+      <PrivateFeedbackModal
+        isOpen={feedbackOpen}
+        onClose={() => setFeedbackOpen(false)}
+        onSubmit={handleFeedbackSubmit}
+      />
+
+      {/* Floating Glass Island Mobile Dock */}
       <GuestBottomNav
         activeTab="requests"
         activeRequestCount={activeCount}
         onNavigateHome={() => navigate('/portal')}
         onNavigateRequests={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-        onOpenFeedback={() => {}}
+        onOpenFeedback={() => setFeedbackOpen(true)}
         onOpenContact={() => {
           const phone = portalConfigService.getContact().frontDeskPhone;
           window.location.href = `tel:${phone.replace(/\s+/g, '')}`;

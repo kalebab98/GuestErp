@@ -88,7 +88,7 @@ const DEFAULT_WIFI: WifiConfig = {
 
 const DEFAULT_BRANDING: PortalBrandingConfig = {
   portalBrandName: 'GuestCare',
-  heroHeadline: 'YOUR COMFORT, ONE TAP AWAY!',
+  heroHeadline: 'Your comfort, one tap away.',
   heroSubtitle:
     'Request housekeeping, laundry, maintenance, or order coffee, food, and everyday essentials right to your door.',
   heroCtaLabel: 'Explore Services',

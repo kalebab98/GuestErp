@@ -145,7 +145,7 @@ export const SimpleServiceModal: React.FC<SimpleServiceModalProps> = ({
         {/* 1. Quick Tap Common Options */}
         {quickChips.length > 0 && (
           <div className="space-y-2">
-            <label className="text-xs font-semibold text-slate-500">
+            <label className="text-[11px] font-semibold uppercase tracking-[0.06em] text-slate-400">
               Quick select
             </label>
             <div className="flex flex-wrap gap-1.5">
@@ -156,13 +156,13 @@ export const SimpleServiceModal: React.FC<SimpleServiceModalProps> = ({
                     key={idx}
                     type="button"
                     onClick={() => setGeneralIssue(active ? '' : chip)}
-                    className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium transition-all border ${
+                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all active:scale-95 ${
                       active
-                        ? 'bg-[#11574A] text-white border-[#11574A] shadow-2xs'
-                        : 'bg-[#F7F8F9] text-slate-700 border-slate-200/80 hover:bg-slate-100'
+                        ? 'bg-[#0F4C40] text-white shadow-[0_2px_8px_-2px_rgba(15,76,64,0.4)]'
+                        : 'bg-[#F6F8FA] text-slate-700 ring-1 ring-slate-900/[0.06] hover:bg-white hover:ring-[#0F4C40]/30'
                     }`}
                   >
-                    {active && <Check className="h-3.5 w-3.5" />}
+                    {active && <Check className="h-3 w-3 stroke-[2.5]" />}
                     <span>{chip}</span>
                   </button>
                 );
@@ -174,7 +174,7 @@ export const SimpleServiceModal: React.FC<SimpleServiceModalProps> = ({
         {/* 2. Deliverable Items (Editable from Staff Dashboard) */}
         {deliverableItems.length > 0 && (
           <div className="space-y-2.5">
-            <label className="text-xs font-semibold text-slate-500">
+            <label className="text-[11px] font-semibold uppercase tracking-[0.06em] text-slate-400">
               Or add items to deliver
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -183,36 +183,36 @@ export const SimpleServiceModal: React.FC<SimpleServiceModalProps> = ({
                 return (
                   <div
                     key={item.id}
-                    className={`flex items-center justify-between rounded-xl px-3 py-2 border transition-colors ${
+                    className={`flex items-center justify-between rounded-xl px-3 py-2 transition-all ${
                       qty > 0
-                        ? 'bg-[#F0F7F5] border-[#11574A]/40'
-                        : 'bg-[#F7F8F9] border-transparent'
+                        ? 'bg-[#F2F7F5] ring-1 ring-[#0F4C40]/30'
+                        : 'bg-[#F6F8FA] ring-1 ring-slate-900/[0.05]'
                     }`}
                   >
                     <div className="min-w-0 pr-2">
-                      <span className="block text-xs font-medium text-slate-800 truncate">
+                      <span className="block text-xs font-semibold text-slate-800 truncate">
                         {item.name}
                       </span>
                       {item.priceLabel && (
                         <span className="block text-[10px] text-slate-400">{item.priceLabel}</span>
                       )}
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-1.5 shrink-0">
                       <button
                         type="button"
                         onClick={() => updateQty(item.id, -1, item.maxQty)}
                         disabled={qty === 0}
-                        className="flex h-6 w-6 items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-600 disabled:opacity-30"
+                        className="flex h-6 w-6 items-center justify-center rounded-full bg-white ring-1 ring-slate-900/[0.08] text-slate-600 disabled:opacity-30 active:scale-90 transition-all"
                       >
                         <Minus className="h-3 w-3" />
                       </button>
-                      <span className="w-4 text-center text-xs font-bold text-slate-900">
+                      <span className="w-4 text-center text-xs font-mono tabular-nums font-bold text-slate-900">
                         {qty}
                       </span>
                       <button
                         type="button"
                         onClick={() => updateQty(item.id, 1, item.maxQty)}
-                        className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#11574A] text-white"
+                        className="flex h-6 w-6 items-center justify-center rounded-full bg-[#0F4C40] hover:bg-[#0B3B31] text-white active:scale-90 transition-all"
                       >
                         <Plus className="h-3 w-3" />
                       </button>
@@ -224,9 +224,9 @@ export const SimpleServiceModal: React.FC<SimpleServiceModalProps> = ({
 
             {/* Live Selected Items Summary Box shown right below */}
             {selectedItems.length > 0 && (
-              <div className="rounded-xl bg-[#F0F7F5] border border-[#11574A]/25 p-3 space-y-2 animate-fadeIn">
+              <div className="rounded-xl bg-[#F2F7F5] ring-1 ring-[#0F4C40]/20 p-3 space-y-2 animate-fadeIn">
                 <div className="flex items-center justify-between">
-                  <span className="inline-flex items-center gap-1.5 text-xs font-bold text-[#11574A]">
+                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#0F4C40] tabular-nums">
                     <ShoppingBag className="h-3.5 w-3.5" />
                     <span>Selected to Deliver ({totalSelectedCount})</span>
                   </span>
@@ -243,9 +243,11 @@ export const SimpleServiceModal: React.FC<SimpleServiceModalProps> = ({
                   {selectedItems.map(item => (
                     <span
                       key={item.id}
-                      className="inline-flex items-center gap-1.5 rounded-lg bg-white border border-[#11574A]/20 px-2.5 py-1 text-xs font-semibold text-slate-800 shadow-2xs"
+                      className="inline-flex items-center gap-1.5 rounded-full bg-white ring-1 ring-[#0F4C40]/15 px-2.5 py-0.5 text-[11.5px] font-semibold text-slate-800 shadow-[0_1px_2px_rgba(15,23,42,0.03)]"
                     >
-                      <span className="text-[#11574A] font-bold">{item.quantity}x</span>
+                      <span className="text-[#0F4C40] font-mono tabular-nums font-bold">
+                        {item.quantity}x
+                      </span>
                       <span>{item.name}</span>
                       <button
                         type="button"
@@ -279,13 +281,13 @@ export const SimpleServiceModal: React.FC<SimpleServiceModalProps> = ({
                 ? 'e.g. Wash & fold pickup for 1 laundry bag...'
                 : 'Describe your main issue or request...'
             }
-            className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-[#11574A] focus:outline-none focus:ring-1 focus:ring-[#11574A] transition-colors"
+            className="w-full rounded-xl ring-1 ring-slate-900/[0.1] bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-[#0F4C40]/40 focus:outline-none transition-all"
           />
         </div>
 
         {/* 4. Additional Note (Optional) */}
         <div className="space-y-1.5">
-          <label className="text-xs font-semibold text-slate-500">
+          <label className="text-xs font-medium text-slate-500">
             Additional note (optional)
           </label>
           <textarea
@@ -293,22 +295,22 @@ export const SimpleServiceModal: React.FC<SimpleServiceModalProps> = ({
             value={note}
             onChange={e => setNote(e.target.value)}
             placeholder="Preferred time, brand preference, or extra details..."
-            className="w-full rounded-xl border border-slate-200 bg-[#F7F8F9] px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-[#11574A] focus:outline-none focus:ring-1 focus:ring-[#11574A] transition-colors"
+            className="w-full rounded-xl ring-1 ring-slate-900/[0.07] bg-[#F6F8FA] px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-[#0F4C40]/40 focus:outline-none transition-all"
           />
         </div>
 
         {/* 5. Direct Local Service Providers (for Shop & Delivery) */}
         {category.code === 'shop_delivery' && providers.length > 0 && (
-          <div className="space-y-2 pt-2 border-t border-slate-100">
-            <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-600">
-              <Store className="h-3.5 w-3.5 text-[#11574A]" />
+          <div className="space-y-2 pt-2.5 border-t border-slate-100">
+            <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-slate-400">
+              <Store className="h-3.5 w-3.5 text-[#0F4C40]" />
               <span>Or call local service directly</span>
             </div>
-            <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+            <div className="space-y-1.5 max-h-40 overflow-y-auto pr-0.5">
               {providers.map(p => (
                 <div
                   key={p.id}
-                  className="flex items-center justify-between gap-2 rounded-xl bg-[#F7F8F9] px-3 py-2 text-xs"
+                  className="flex items-center justify-between gap-2 rounded-xl bg-[#F6F8FA] ring-1 ring-slate-900/[0.05] px-3 py-2 text-xs"
                 >
                   <div className="min-w-0">
                     <p className="font-semibold text-slate-800 truncate">{p.name}</p>
@@ -317,7 +319,7 @@ export const SimpleServiceModal: React.FC<SimpleServiceModalProps> = ({
                   <div className="flex items-center gap-1.5 shrink-0">
                     <a
                       href={`tel:${p.phone.replace(/\s+/g, '')}`}
-                      className="inline-flex items-center gap-1 rounded-lg bg-white border border-slate-200 px-2 py-1 text-[11px] font-mono font-bold text-[#11574A] hover:bg-slate-50"
+                      className="inline-flex items-center gap-1 rounded-lg bg-white ring-1 ring-slate-900/[0.08] h-7 px-2 text-[11px] font-mono tabular-nums font-semibold text-[#0F4C40] hover:ring-[#0F4C40]/40"
                       title={`Call ${p.name}`}
                     >
                       <Phone className="h-3 w-3" />
@@ -330,7 +332,7 @@ export const SimpleServiceModal: React.FC<SimpleServiceModalProps> = ({
                         )}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-[#25D366] text-white hover:bg-[#20BA5A]"
+                        className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-[#25D366]/10 text-[#15803D] ring-1 ring-[#25D366]/25 hover:bg-[#25D366] hover:text-white transition-colors"
                         title={`WhatsApp ${p.name}`}
                       >
                         <MessageCircle className="h-3.5 w-3.5" />
@@ -369,14 +371,14 @@ export const SimpleServiceModal: React.FC<SimpleServiceModalProps> = ({
         )}
 
         {/* Submit Footer */}
-        <div className="flex items-center justify-end gap-2.5 pt-2">
-          <Button type="button" variant="ghost" onClick={onClose} disabled={loading}>
+        <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+          <Button type="button" variant="ghost" onClick={onClose} disabled={loading} className="rounded-full text-xs">
             Cancel
           </Button>
           <Button
             type="submit"
             loading={loading}
-            className="bg-[#11574A] hover:bg-[#0D443A] text-white rounded-xl px-6"
+            className="bg-[#0F4C40] hover:bg-[#0B3B31] text-white rounded-full px-5 text-xs font-semibold shadow-[0_2px_10px_-2px_rgba(15,76,64,0.4)]"
           >
             Send Request
           </Button>

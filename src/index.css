@@ -3,49 +3,123 @@
 @tailwind utilities;
 
 :root {
-  --background: 0 0% 100%;
-  --foreground: 222.2 84% 4.9%;
+  --background: 210 25% 97.5%;
+  --foreground: 222.2 47.4% 11.2%;
 
   --card: 0 0% 100%;
-  --card-foreground: 222.2 84% 4.9%;
+  --card-foreground: 222.2 47.4% 11.2%;
 
   --popover: 0 0% 100%;
-  --popover-foreground: 222.2 84% 4.9%;
+  --popover-foreground: 222.2 47.4% 11.2%;
 
-  --primary: 169 67% 20%;
+  --primary: 168 67% 18%;
   --primary-foreground: 0 0% 100%;
 
-  --secondary: 210 40% 96.1%;
+  --secondary: 210 30% 96%;
   --secondary-foreground: 222.2 47.4% 11.2%;
 
-  --muted: 210 40% 96.1%;
+  --muted: 210 28% 95.5%;
   --muted-foreground: 215.4 16.3% 46.9%;
 
-  --accent: 210 40% 96.1%;
+  --accent: 210 30% 96%;
   --accent-foreground: 222.2 47.4% 11.2%;
 
   --destructive: 0 84.2% 60.2%;
   --destructive-foreground: 210 40% 98%;
 
-  --border: 214.3 31.8% 91.4%;
-  --input: 214.3 31.8% 91.4%;
-  --ring: 169 67% 20%;
+  --border: 214.3 25% 90%;
+  --input: 214.3 25% 90%;
+  --ring: 168 67% 18%;
 
   --radius: 0.75rem;
 }
 
 body {
-  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Geist', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   margin: 0;
   padding: 0;
-  background-color: hsl(var(--background));
-  color: hsl(var(--foreground));
+  background-color: #F6F8FA;
+  color: #0F172A;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+/* Precision tabular figures for counters, ETAs, ticket IDs, and phone numbers */
+.tabular-nums,
+.font-mono {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Ultra-clean Porcelain SaaS Canvas with subtle top ambient radial wash */
+.porcelain-canvas {
+  background-color: #F6F8FA;
+  background-image:
+    radial-gradient(ellipse 80% 420px at 50% -120px, rgba(15, 76, 64, 0.065), transparent 72%),
+    radial-gradient(circle at 88% 12%, rgba(20, 184, 166, 0.045), transparent 45%);
+}
+
+/* Linear / Apple Double-Bezel Surface Helpers */
+.bezel-shell {
+  background: rgba(15, 23, 42, 0.028);
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.055);
+}
+
+.bezel-core {
+  background: #FFFFFF;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 1px 2px rgba(15, 23, 42, 0.04),
+    0 12px 32px -16px rgba(15, 23, 42, 0.12);
+}
+
+.porcelain-card {
+  background: #FFFFFF;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    0 1px 2px rgba(15, 23, 42, 0.04),
+    0 6px 20px -12px rgba(15, 23, 42, 0.08);
+  transition: transform 240ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 240ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 220ms ease;
+}
+
+.porcelain-card:hover {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    0 2px 4px rgba(15, 23, 42, 0.04),
+    0 16px 32px -16px rgba(15, 76, 64, 0.14);
+}
+
+/* Hide scrollbars cleanly for horizontal mobile pill rails */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes sheetUp {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 @keyframes floatOrb {
@@ -82,7 +156,11 @@ body {
 }
 
 .animate-fadeIn {
-  animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: fadeIn 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.animate-sheet-up {
+  animation: sheetUp 0.26s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 .animate-float-orb {

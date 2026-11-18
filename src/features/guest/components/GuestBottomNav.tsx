@@ -19,61 +19,66 @@ export const GuestBottomNav: React.FC<GuestBottomNavProps> = ({
   onOpenContact,
 }) => {
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-slate-200/80 bg-white/95 backdrop-blur-md px-2 py-2 shadow-[0_-4px_24px_rgba(15,23,42,0.06)]">
-      <div className="mx-auto grid max-w-md grid-cols-4 gap-1">
-        {/* Home */}
-        <button
-          type="button"
-          onClick={onNavigateHome}
-          className={`flex flex-col items-center justify-center gap-0.5 rounded-xl py-1.5 px-1 text-[11px] font-semibold transition-all ${
-            activeTab === 'home'
-              ? 'bg-[#11574A] text-white shadow-2xs'
-              : 'text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          <Home className="h-4 w-4" />
-          <span>Home</span>
-        </button>
+    <div className="md:hidden fixed bottom-3 left-3 right-3 z-40 pointer-events-none">
+      <nav
+        aria-label="Guest Navigation"
+        className="pointer-events-auto mx-auto max-w-md rounded-2xl bg-white/88 backdrop-blur-2xl ring-1 ring-slate-900/[0.08] shadow-[0_12px_32px_-8px_rgba(15,23,42,0.18),0_2px_6px_rgba(15,23,42,0.06)] p-1.5"
+      >
+        <div className="grid grid-cols-4 gap-1">
+          {/* Home */}
+          <button
+            type="button"
+            onClick={onNavigateHome}
+            className={`flex flex-col items-center justify-center gap-0.5 rounded-xl py-1.5 px-1 text-[10.5px] font-semibold tracking-[-0.01em] transition-all duration-200 active:scale-95 ${
+              activeTab === 'home'
+                ? 'bg-[#0F4C40] text-white shadow-[0_2px_10px_-2px_rgba(15,76,64,0.45)]'
+                : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100/70'
+            }`}
+          >
+            <Home className="h-[17px] w-[17px] stroke-[1.75]" />
+            <span>Home</span>
+          </button>
 
-        {/* My Requests */}
-        <button
-          type="button"
-          onClick={onNavigateRequests}
-          className={`relative flex flex-col items-center justify-center gap-0.5 rounded-xl py-1.5 px-1 text-[11px] font-semibold transition-all ${
-            activeTab === 'requests'
-              ? 'bg-[#11574A] text-white shadow-2xs'
-              : 'text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          <ClipboardList className="h-4 w-4" />
-          <span>Requests</span>
-          {activeRequestCount > 0 && activeTab !== 'requests' && (
-            <span className="absolute top-0.5 right-3 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-rose-500 px-1 text-[9px] font-bold text-white">
-              {activeRequestCount}
-            </span>
-          )}
-        </button>
+          {/* Requests */}
+          <button
+            type="button"
+            onClick={onNavigateRequests}
+            className={`relative flex flex-col items-center justify-center gap-0.5 rounded-xl py-1.5 px-1 text-[10.5px] font-semibold tracking-[-0.01em] transition-all duration-200 active:scale-95 ${
+              activeTab === 'requests'
+                ? 'bg-[#0F4C40] text-white shadow-[0_2px_10px_-2px_rgba(15,76,64,0.45)]'
+                : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100/70'
+            }`}
+          >
+            <ClipboardList className="h-[17px] w-[17px] stroke-[1.75]" />
+            <span>Requests</span>
+            {activeRequestCount > 0 && activeTab !== 'requests' && (
+              <span className="absolute top-1 right-2.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-rose-500 px-1 text-[9px] font-bold text-white ring-2 ring-white tabular-nums">
+                {activeRequestCount}
+              </span>
+            )}
+          </button>
 
-        {/* Feedback */}
-        <button
-          type="button"
-          onClick={onOpenFeedback}
-          className="flex flex-col items-center justify-center gap-0.5 rounded-xl py-1.5 px-1 text-[11px] font-semibold text-slate-500 hover:text-[#11574A] transition-colors"
-        >
-          <MessageSquareHeart className="h-4 w-4" />
-          <span>Feedback</span>
-        </button>
+          {/* Feedback */}
+          <button
+            type="button"
+            onClick={onOpenFeedback}
+            className="flex flex-col items-center justify-center gap-0.5 rounded-xl py-1.5 px-1 text-[10.5px] font-semibold tracking-[-0.01em] text-slate-500 hover:text-[#0F4C40] hover:bg-slate-100/70 transition-all duration-200 active:scale-95"
+          >
+            <MessageSquareHeart className="h-[17px] w-[17px] stroke-[1.75]" />
+            <span>Feedback</span>
+          </button>
 
-        {/* Front Desk */}
-        <button
-          type="button"
-          onClick={onOpenContact}
-          className="flex flex-col items-center justify-center gap-0.5 rounded-xl py-1.5 px-1 text-[11px] font-semibold text-slate-500 hover:text-[#11574A] transition-colors"
-        >
-          <PhoneCall className="h-4 w-4" />
-          <span>Front Desk</span>
-        </button>
-      </div>
-    </nav>
+          {/* Front Desk */}
+          <button
+            type="button"
+            onClick={onOpenContact}
+            className="flex flex-col items-center justify-center gap-0.5 rounded-xl py-1.5 px-1 text-[10.5px] font-semibold tracking-[-0.01em] text-slate-500 hover:text-[#0F4C40] hover:bg-slate-100/70 transition-all duration-200 active:scale-95"
+          >
+            <PhoneCall className="h-[17px] w-[17px] stroke-[1.75]" />
+            <span>Front Desk</span>
+          </button>
+        </div>
+      </nav>
+    </div>
   );
 };

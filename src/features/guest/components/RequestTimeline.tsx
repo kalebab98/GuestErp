@@ -18,13 +18,20 @@ const steps: Array<{ status: RequestStatus; label: string; icon: React.FC<{ clas
 export const RequestTimeline: React.FC<RequestTimelineProps> = ({ request }) => {
   const currentStatus = request.status;
 
-  // Determine active step index
   const getStepStatus = (stepStatus: RequestStatus) => {
-    if (currentStatus === 'reopened') {
-      if (stepStatus === 'resolved') return 'alert';
+    if (currentStatus === 'reopened' && stepStatus === 'resolved') {
+      return 'alert';
     }
 
-    const order: RequestStatus[] = ['new', 'acknowledged', 'assigned', 'in_progress', 'waiting', 'resolved', 'closed'];
+    const order: RequestStatus[] = [
+      'new',
+      'acknowledged',
+      'assigned',
+      'in_progress',
+      'waiting',
+      'resolved',
+      'closed',
+    ];
     const currentIndex = order.indexOf(currentStatus);
     const stepIndex = order.indexOf(stepStatus);
 
@@ -34,60 +41,63 @@ export const RequestTimeline: React.FC<RequestTimelineProps> = ({ request }) => 
   };
 
   return (
-    <div className="py-2 text-left">
-      <div className="flex items-center justify-between pb-3">
-        <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+    <div className="py-1 text-left">
+      <div className="flex items-center justify-between pb-3.5">
+        <h4 className="text-[11px] font-semibold uppercase tracking-[0.06em] text-slate-400">
           Progress Timeline
         </h4>
-        <span className="text-xs text-slate-400 font-mono">
-          Ticket #{request.ticketNumber}
+        <span className="text-[11px] text-slate-400 font-mono tabular-nums">
+          #{request.ticketNumber}
         </span>
       </div>
 
       {request.status === 'reopened' && (
-        <div className="mb-4 flex items-start gap-2.5 rounded-lg bg-rose-50 p-3 text-xs text-rose-800 border border-rose-200">
+        <div className="mb-4 flex items-start gap-2.5 rounded-xl bg-rose-50/90 p-3 text-xs text-rose-800 ring-1 ring-rose-200/80">
           <AlertTriangle className="h-4 w-4 shrink-0 text-rose-600 mt-0.5" />
           <div>
             <p className="font-semibold">Reopened by you</p>
-            <p className="text-rose-700 mt-0.5">{request.reopenReason || 'Marked unresolved. Our team has been alerted for priority follow-up.'}</p>
+            <p className="text-rose-700 text-[11px] mt-0.5">
+              {request.reopenReason || 'Marked unresolved. Our team has been alerted for priority follow-up.'}
+            </p>
           </div>
         </div>
       )}
 
-      {/* Stepper */}
-      <div className="relative pl-6 space-y-6 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
+      {/* Hairline Vertical Stepper */}
+      <div className="relative pl-7 space-y-4 before:absolute before:left-[9px] before:top-2 before:bottom-2 before:w-px before:bg-slate-200">
         {steps.map((s, idx) => {
           const state = getStepStatus(s.status);
           const Icon = s.icon;
-
-          // Find relevant history item if any
           const hist = request.statusHistory?.find(h => h.toStatus === s.status);
 
-          let circleStyle = 'bg-slate-100 text-slate-400 border-2 border-white ring-2 ring-slate-200';
+          let circleStyle = 'bg-white text-slate-400 ring-1 ring-slate-200';
           if (state === 'complete') {
-            circleStyle = 'bg-teal-600 text-white border-2 border-white ring-2 ring-teal-600';
+            circleStyle = 'bg-[#0F4C40] text-white ring-2 ring-[#0F4C40]/20';
           } else if (state === 'current') {
-            circleStyle = 'bg-amber-500 text-white border-2 border-white ring-2 ring-amber-500 animate-pulse';
+            circleStyle = 'bg-amber-500 text-white ring-4 ring-amber-500/20';
           } else if (state === 'alert') {
-            circleStyle = 'bg-rose-500 text-white border-2 border-white ring-2 ring-rose-500';
+            circleStyle = 'bg-rose-500 text-white ring-4 ring-rose-500/20';
           }
 
           return (
             <div key={idx} className="relative flex items-start gap-3">
-              {/* Dot */}
               <div
-                className={`absolute -left-6 mt-0.5 flex h-5 w-5 items-center justify-center rounded-full text-[10px] ${circleStyle}`}
+                className={`absolute -left-7 mt-0.5 flex h-5 w-5 items-center justify-center rounded-full ${circleStyle}`}
               >
-                <Icon className="h-3 w-3" />
+                <Icon className="h-2.5 w-2.5 stroke-[2.2]" />
               </div>
 
-              <div className="flex-1">
-                <div className="flex items-center justify-between">
-                  <p className={`text-xs font-semibold ${state === 'upcoming' ? 'text-slate-400' : 'text-slate-800'}`}>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-2">
+                  <p
+                    className={`text-xs font-semibold ${
+                      state === 'upcoming' ? 'text-slate-400' : 'text-slate-900'
+                    }`}
+                  >
                     {s.label}
                   </p>
                   {hist && (
-                    <span className="text-[11px] text-slate-400">
+                    <span className="text-[10.5px] font-mono tabular-nums text-slate-400">
                       {formatDate(hist.createdAt)}
                     </span>
                   )}
@@ -95,14 +105,16 @@ export const RequestTimeline: React.FC<RequestTimelineProps> = ({ request }) => 
 
                 {s.status === 'in_progress' && request.assignedStaffName && (
                   <p className="text-[11px] text-slate-500 mt-0.5">
-                    Attending: {request.assignedStaffName} ({request.assignedDepartment})
+                    Attending: <span className="font-medium text-slate-700">{request.assignedStaffName}</span> ({request.assignedDepartment})
                   </p>
                 )}
 
                 {s.status === 'resolved' && request.resolutionNotes && (
-                  <div className="mt-1.5 rounded-md bg-emerald-50/70 p-2 text-xs text-emerald-900 border border-emerald-100">
-                    <p className="font-medium text-[11px] text-emerald-800">Resolution Note:</p>
-                    <p className="mt-0.5">{request.resolutionNotes}</p>
+                  <div className="mt-1.5 rounded-xl bg-emerald-50/75 p-2.5 text-xs text-emerald-900 ring-1 ring-emerald-200/70">
+                    <p className="font-semibold text-[10.5px] uppercase tracking-wider text-emerald-700">
+                      Resolution Note
+                    </p>
+                    <p className="mt-0.5 leading-relaxed">{request.resolutionNotes}</p>
                   </div>
                 )}
               </div>
@@ -113,4 +125,3 @@ export const RequestTimeline: React.FC<RequestTimelineProps> = ({ request }) => 
     </div>
   );
 };
-
