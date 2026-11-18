@@ -34,35 +34,35 @@ const iconMap: Record<string, LucideIcon> = {
 // Restrained, desaturated Apple-style icon well tints for instant visual scanning
 const categoryAccents: Record<string, { well: string; hoverWell: string }> = {
   maintenance: {
-    well: 'bg-amber-50/90 text-amber-700 ring-amber-600/12',
+    well: 'bg-amber-50/90 text-amber-700 ring-amber-600/[0.12]',
     hoverWell: 'group-hover:bg-amber-600 group-hover:text-white group-hover:ring-amber-600',
   },
   housekeeping: {
-    well: 'bg-emerald-50/90 text-emerald-700 ring-emerald-600/12',
+    well: 'bg-emerald-50/90 text-emerald-700 ring-emerald-600/[0.12]',
     hoverWell: 'group-hover:bg-[#0F4C40] group-hover:text-white group-hover:ring-[#0F4C40]',
   },
   laundry: {
-    well: 'bg-sky-50/90 text-sky-700 ring-sky-600/12',
+    well: 'bg-sky-50/90 text-sky-700 ring-sky-600/[0.12]',
     hoverWell: 'group-hover:bg-sky-600 group-hover:text-white group-hover:ring-sky-600',
   },
   shop_delivery: {
-    well: 'bg-rose-50/90 text-rose-700 ring-rose-600/12',
+    well: 'bg-rose-50/90 text-rose-700 ring-rose-600/[0.12]',
     hoverWell: 'group-hover:bg-rose-600 group-hover:text-white group-hover:ring-rose-600',
   },
   comfort: {
-    well: 'bg-teal-50/90 text-teal-700 ring-teal-600/12',
+    well: 'bg-teal-50/90 text-teal-700 ring-teal-600/[0.12]',
     hoverWell: 'group-hover:bg-[#0F4C40] group-hover:text-white group-hover:ring-[#0F4C40]',
   },
   internet_tech: {
-    well: 'bg-indigo-50/90 text-indigo-700 ring-indigo-600/12',
+    well: 'bg-indigo-50/90 text-indigo-700 ring-indigo-600/[0.12]',
     hoverWell: 'group-hover:bg-indigo-600 group-hover:text-white group-hover:ring-indigo-600',
   },
   guest_services: {
-    well: 'bg-[#ECF5F2] text-[#0F4C40] ring-[#0F4C40]/12',
+    well: 'bg-[#ECF5F2] text-[#0F4C40] ring-[#0F4C40]/[0.12]',
     hoverWell: 'group-hover:bg-[#0F4C40] group-hover:text-white group-hover:ring-[#0F4C40]',
   },
   other: {
-    well: 'bg-slate-100/90 text-slate-700 ring-slate-900/8',
+    well: 'bg-slate-100/90 text-slate-700 ring-slate-900/[0.08]',
     hoverWell: 'group-hover:bg-slate-900 group-hover:text-white group-hover:ring-slate-900',
   },
 };
@@ -111,7 +111,7 @@ export const ServiceGrid: React.FC<ServiceGridProps> = ({
               key={cat.id}
               type="button"
               onClick={() => onSelectCategory(cat)}
-              className="porcelain-card group relative flex flex-col justify-between gap-3 rounded-2xl border border-slate-200/75 hover:border-[#0F4C40]/30 p-3.5 sm:p-4 text-left hover:-translate-y-0.5 active:scale-[0.98]"
+              className="porcelain-card group relative flex h-full flex-col justify-between gap-3 rounded-2xl border border-slate-200/75 hover:border-[#0F4C40]/30 p-3.5 sm:p-4 text-left hover:-translate-y-0.5 active:scale-[0.98]"
             >
               {/* Top Row: Tinted Icon Well + Subtle ETA Pill */}
               <div className="flex items-start justify-between gap-2 w-full">

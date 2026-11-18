@@ -63,7 +63,7 @@ export const RequestDetailDrawer: React.FC<RequestDetailDrawerProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-slate-900/50 backdrop-blur-xs flex justify-end">
+    <div className="fixed inset-0 z-50 overflow-hidden bg-slate-900/50 backdrop-blur-sm flex justify-end">
       <div
         className="fixed inset-0 transition-opacity"
         onClick={onClose}

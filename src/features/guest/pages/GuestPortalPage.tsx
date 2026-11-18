@@ -422,7 +422,7 @@ export const GuestPortalPage: React.FC = () => {
   const unitLabel = session.apartmentRef.split(' - ')[0];
 
   return (
-    <div className="porcelain-canvas min-h-[100dvh] text-slate-900 font-sans pb-28 md:pb-14 antialiased">
+    <div className="porcelain-canvas min-h-[100dvh] overflow-x-hidden text-slate-900 font-sans pb-28 md:pb-14 antialiased">
       {/* Frosted Porcelain Header Bar */}
       <header className="sticky top-0 z-30 border-b border-slate-200/65 bg-[#F6F8FA]/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 sm:px-6 h-14 sm:h-16">
@@ -547,7 +547,7 @@ export const GuestPortalPage: React.FC = () => {
           <div className="animate-section-rise space-y-3">
             <div className="bezel-shell rounded-[1.75rem] p-1.5">
               <div
-                className="relative overflow-hidden rounded-[1.375rem] bg-[#0B231E] p-4.5 sm:p-6 md:p-7 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_20px_48px_-20px_rgba(11,35,30,0.65)]"
+                className="relative overflow-hidden rounded-[1.375rem] bg-[#0B231E] p-5 sm:p-6 md:p-7 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_20px_48px_-20px_rgba(11,35,30,0.65)]"
                 style={{
                   backgroundImage:
                     'radial-gradient(ellipse 70% 80% at 10% 0%, rgba(45, 212, 191, 0.22), transparent 58%), radial-gradient(ellipse 60% 70% at 95% 100%, rgba(16, 185, 129, 0.16), transparent 55%)',
@@ -633,7 +633,7 @@ export const GuestPortalPage: React.FC = () => {
                             onClick={() => setWifiQrOpen(true)}
                             aria-label="Show Wi-Fi QR Code"
                             title="Scan to connect Wi-Fi"
-                            className="inline-flex h-7.5 w-7.5 items-center justify-center rounded-full bg-white/12 hover:bg-white/22 ring-1 ring-white/15 text-teal-100 active:scale-95 transition-all p-1.5"
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/15 hover:bg-white/25 ring-1 ring-white/20 text-teal-100 active:scale-95 transition-all"
                           >
                             <QrCode className="h-3.5 w-3.5" />
                           </button>
@@ -641,7 +641,7 @@ export const GuestPortalPage: React.FC = () => {
                           <button
                             type="button"
                             onClick={handleCopyWifi}
-                            className={`inline-flex items-center gap-1 rounded-full px-3 h-7.5 py-1 text-[11px] font-semibold active:scale-95 transition-all ${
+                            className={`inline-flex items-center gap-1 rounded-full px-3 h-8 text-[11px] font-semibold active:scale-95 transition-all ${
                               wifiCopied
                                 ? 'bg-emerald-400 text-slate-950'
                                 : 'bg-white text-[#0B231E] hover:bg-teal-50'
@@ -679,7 +679,7 @@ export const GuestPortalPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setDirectoryOpen(true)}
-                className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-white ring-1 ring-slate-900/[0.07] hover:ring-[#0F4C40]/35 px-3.5 h-8.5 py-1.5 text-xs font-semibold text-slate-800 shadow-[0_1px_2px_rgba(15,23,42,0.03)] active:scale-95 transition-all"
+                className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-white ring-1 ring-slate-900/[0.07] hover:ring-[#0F4C40]/35 px-3.5 h-9 text-xs font-semibold text-slate-800 shadow-[0_1px_2px_rgba(15,23,42,0.03)] active:scale-95 transition-all"
               >
                 <Store className="h-3.5 w-3.5 text-[#0F4C40]" />
                 <span>Quick Dial & Rides</span>
@@ -688,7 +688,7 @@ export const GuestPortalPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => navigate('/portal/requests')}
-                className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-white ring-1 ring-slate-900/[0.07] hover:ring-[#0F4C40]/35 px-3.5 h-8.5 py-1.5 text-xs font-semibold text-slate-800 shadow-[0_1px_2px_rgba(15,23,42,0.03)] active:scale-95 transition-all"
+                className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-white ring-1 ring-slate-900/[0.07] hover:ring-[#0F4C40]/35 px-3.5 h-9 text-xs font-semibold text-slate-800 shadow-[0_1px_2px_rgba(15,23,42,0.03)] active:scale-95 transition-all"
               >
                 <ClipboardList className="h-3.5 w-3.5 text-[#0F4C40]" />
                 <span>My Requests</span>
@@ -702,7 +702,7 @@ export const GuestPortalPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setWifiQrOpen(true)}
-                className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-white ring-1 ring-slate-900/[0.07] hover:ring-[#0F4C40]/35 px-3.5 h-8.5 py-1.5 text-xs font-semibold text-slate-800 shadow-[0_1px_2px_rgba(15,23,42,0.03)] active:scale-95 transition-all"
+                className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-white ring-1 ring-slate-900/[0.07] hover:ring-[#0F4C40]/35 px-3.5 h-9 text-xs font-semibold text-slate-800 shadow-[0_1px_2px_rgba(15,23,42,0.03)] active:scale-95 transition-all"
               >
                 <QrCode className="h-3.5 w-3.5 text-[#0F4C40]" />
                 <span>Wi-Fi QR</span>
@@ -710,7 +710,7 @@ export const GuestPortalPage: React.FC = () => {
 
               <a
                 href={`tel:${contact.medicalStorePhone.replace(/\s+/g, '')}`}
-                className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-white ring-1 ring-slate-900/[0.07] hover:ring-rose-300 px-3.5 h-8.5 py-1.5 text-xs font-semibold text-slate-800 shadow-[0_1px_2px_rgba(15,23,42,0.03)] active:scale-95 transition-all"
+                className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-white ring-1 ring-slate-900/[0.07] hover:ring-rose-300 px-3.5 h-9 text-xs font-semibold text-slate-800 shadow-[0_1px_2px_rgba(15,23,42,0.03)] active:scale-95 transition-all"
               >
                 <Cross className="h-3.5 w-3.5 text-rose-500" />
                 <span>Medical Store</span>
@@ -723,7 +723,7 @@ export const GuestPortalPage: React.FC = () => {
                   )}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-white ring-1 ring-slate-900/[0.07] hover:ring-[#25D366]/50 px-3.5 h-8.5 py-1.5 text-xs font-semibold text-slate-800 shadow-[0_1px_2px_rgba(15,23,42,0.03)] active:scale-95 transition-all"
+                  className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-white ring-1 ring-slate-900/[0.07] hover:ring-[#25D366]/50 px-3.5 h-9 text-xs font-semibold text-slate-800 shadow-[0_1px_2px_rgba(15,23,42,0.03)] active:scale-95 transition-all"
                 >
                   <MessageCircle className="h-3.5 w-3.5 text-[#16A34A]" />
                   <span>WhatsApp Desk</span>
@@ -820,7 +820,7 @@ export const GuestPortalPage: React.FC = () => {
                   </div>
                   <a
                     href={`tel:${p.phone.replace(/\s+/g, '')}`}
-                    className="shrink-0 inline-flex items-center gap-1 rounded-lg bg-[#0F4C40] text-white h-7.5 px-2.5 py-1 text-[11px] font-mono tabular-nums font-semibold"
+                    className="shrink-0 inline-flex items-center gap-1 rounded-lg bg-[#0F4C40] text-white h-8 px-2.5 text-[11px] font-mono tabular-nums font-semibold"
                   >
                     <Phone className="h-3 w-3" />
                     <span>{p.phone}</span>

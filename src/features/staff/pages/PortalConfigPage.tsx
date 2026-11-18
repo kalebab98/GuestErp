@@ -388,7 +388,7 @@ export const PortalConfigPage: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold tracking-[-0.025em] text-slate-900 flex items-center gap-2">
-            <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-[#F2F7F5] ring-1 ring-[#0F4C40]/12 text-[#0F4C40]">
+            <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-[#F2F7F5] ring-1 ring-[#0F4C40]/[0.12] text-[#0F4C40]">
               <Sliders className="h-4 w-4 stroke-[1.8]" />
             </span>
             <span>Guest Portal Content & Data</span>

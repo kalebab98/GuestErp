@@ -135,7 +135,7 @@ export const MyRequestsPage: React.FC = () => {
   const unitLabel = session?.apartmentRef.split(' - ')[0];
 
   return (
-    <div className="porcelain-canvas min-h-[100dvh] text-slate-900 font-sans pb-28 md:pb-14 antialiased text-left">
+    <div className="porcelain-canvas min-h-[100dvh] overflow-x-hidden text-slate-900 font-sans pb-28 md:pb-14 antialiased text-left">
       {/* Frosted Porcelain Header */}
       <header className="sticky top-0 z-30 border-b border-slate-200/65 bg-[#F6F8FA]/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-4xl items-center justify-between px-4 sm:px-6 h-14 sm:h-16">
@@ -186,7 +186,7 @@ export const MyRequestsPage: React.FC = () => {
 
         {/* Segmented Filter Bar */}
         {requests.length > 0 && (
-          <div className="inline-flex items-center gap-1 rounded-full bg-white ring-1 ring-slate-900/[0.06] p-1 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
+          <div className="no-scrollbar inline-flex max-w-full overflow-x-auto items-center gap-1 rounded-full bg-white ring-1 ring-slate-900/[0.06] p-1 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
             {[
               { id: 'all' as const, label: `All (${requests.length})` },
               { id: 'active' as const, label: `Active (${activeCount})` },
@@ -198,7 +198,7 @@ export const MyRequestsPage: React.FC = () => {
                   key={tab.id}
                   type="button"
                   onClick={() => setFilter(tab.id)}
-                  className={`rounded-full px-3.5 py-1.5 text-[11.5px] font-semibold tabular-nums transition-all ${
+                  className={`shrink-0 rounded-full px-3 py-1.5 text-[11.5px] font-semibold tabular-nums transition-all ${
                     isSelected
                       ? 'bg-[#0F4C40] text-white shadow-[0_2px_8px_-2px_rgba(15,76,64,0.4)]'
                       : 'text-slate-500 hover:text-slate-900'

@@ -242,7 +242,7 @@ export const OverviewPage: React.FC = () => {
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#F2F7F5] ring-1 ring-[#0F4C40]/10 text-[#0F4C40] group-hover:bg-[#0F4C40] group-hover:text-white transition-all duration-200">
-                    <Icon className="h-4.5 w-4.5 stroke-[1.6]" />
+                    <Icon className="h-[18px] w-[18px] stroke-[1.6]" />
                   </div>
                   <div className="min-w-0">
                     <span className="block text-[13px] font-semibold tracking-[-0.01em] text-slate-900 truncate">
@@ -337,14 +337,14 @@ export const OverviewPage: React.FC = () => {
                       <Button
                         size="sm"
                         variant="outline"
-                        className="text-xs h-7.5 px-3 rounded-full"
+                        className="text-xs h-8 px-3 rounded-full"
                         onClick={() => setAssignModalReq(req)}
                       >
                         Assign
                       </Button>
                       <Button
                         size="sm"
-                        className="text-xs h-7.5 px-3 rounded-full"
+                        className="text-xs h-8 px-3 rounded-full"
                         onClick={() => setStatusModalReq(req)}
                       >
                         Update

@@ -19,10 +19,10 @@ export const GuestBottomNav: React.FC<GuestBottomNavProps> = ({
   onOpenContact,
 }) => {
   return (
-    <div className="md:hidden fixed bottom-3 left-3 right-3 z-40 pointer-events-none">
+    <div className="md:hidden fixed bottom-[max(0.75rem,env(safe-area-inset-bottom))] left-3 right-3 z-40 pointer-events-none">
       <nav
         aria-label="Guest Navigation"
-        className="pointer-events-auto mx-auto max-w-md rounded-2xl bg-white/88 backdrop-blur-2xl ring-1 ring-slate-900/[0.08] shadow-[0_12px_32px_-8px_rgba(15,23,42,0.18),0_2px_6px_rgba(15,23,42,0.06)] p-1.5"
+        className="pointer-events-auto mx-auto max-w-md rounded-2xl bg-white/95 backdrop-blur-2xl ring-1 ring-slate-900/[0.08] shadow-[0_12px_32px_-8px_rgba(15,23,42,0.18),0_2px_6px_rgba(15,23,42,0.06)] p-1.5"
       >
         <div className="grid grid-cols-4 gap-1">
           {/* Home */}

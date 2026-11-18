@@ -72,7 +72,7 @@ export const PhotoUploader: React.FC<PhotoUploaderProps> = ({
           {files.map((file, idx) => (
             <div
               key={idx}
-              className="relative h-20 w-20 rounded-lg overflow-hidden border border-slate-200 bg-slate-100 group shadow-xs"
+              className="relative h-20 w-20 rounded-lg overflow-hidden border border-slate-200 bg-slate-100 group shadow-sm"
             >
               <img
                 src={file.previewUrl}

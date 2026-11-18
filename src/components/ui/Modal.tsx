@@ -48,14 +48,14 @@ export function Modal({
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity"
+        className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
         onClick={onClose}
       />
 
       {/* Modal Dialog (Bottom sheet on mobile, centered machined card on desktop) */}
       <div
         className={cn(
-          'animate-sheet-up relative w-full rounded-t-[1.75rem] sm:rounded-2xl bg-white px-4 pt-3.5 pb-5 sm:p-6 ring-1 ring-slate-900/[0.08] shadow-[0_24px_64px_-16px_rgba(15,23,42,0.28)] z-10 max-h-[88dvh] sm:max-h-[90dvh] flex flex-col',
+          'animate-sheet-up relative w-full rounded-t-[1.75rem] sm:rounded-2xl bg-white px-4 pt-3.5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:p-6 ring-1 ring-slate-900/[0.08] shadow-[0_24px_64px_-16px_rgba(15,23,42,0.28)] z-10 max-h-[88dvh] sm:max-h-[90dvh] flex flex-col',
           sizes[size],
           className
         )}

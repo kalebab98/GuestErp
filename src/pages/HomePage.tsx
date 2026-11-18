@@ -111,7 +111,7 @@ export const HomePage: React.FC = () => {
             {/* Clean Architectural Feature List (No cheesy boxes) */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-4 border-t border-white/10">
               <div className="space-y-2">
-                <QrCode className="h-4.5 w-4.5 text-teal-300/90" />
+                <QrCode className="h-[18px] w-[18px] text-teal-300/90" />
                 <h2 className="text-sm font-semibold text-white">Per-Apartment QR</h2>
                 <p className="text-xs text-slate-400 leading-relaxed">
                   Dedicated QR codes for apartments 1A through 8B with instant print and token reset.
@@ -119,7 +119,7 @@ export const HomePage: React.FC = () => {
               </div>
 
               <div className="space-y-2">
-                <ClipboardCheck className="h-4.5 w-4.5 text-teal-300/90" />
+                <ClipboardCheck className="h-[18px] w-[18px] text-teal-300/90" />
                 <h2 className="text-sm font-semibold text-white">Live Ticket Dispatch</h2>
                 <p className="text-xs text-slate-400 leading-relaxed">
                   Route maintenance, housekeeping & laundry tickets and track guest confirmation.
@@ -127,7 +127,7 @@ export const HomePage: React.FC = () => {
               </div>
 
               <div className="space-y-2">
-                <Sliders className="h-4.5 w-4.5 text-teal-300/90" />
+                <Sliders className="h-[18px] w-[18px] text-teal-300/90" />
                 <h2 className="text-sm font-semibold text-white">Editable Portal</h2>
                 <p className="text-xs text-slate-400 leading-relaxed">
                   Update Wi-Fi, phone numbers, FAQs, deliverable items & local shop numbers anytime.

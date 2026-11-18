@@ -130,10 +130,10 @@ export const StaffLayout: React.FC = () => {
             setMobileMenuOpen(false);
             setQrModalOpen(true);
           }}
-          className="group flex w-full items-center justify-between rounded-xl bg-[#F2F7F5] hover:bg-[#E5F2EE] px-3 py-2.5 text-xs font-semibold text-[#0F4C40] ring-1 ring-[#0F4C40]/12 active:scale-[0.985] transition-all"
+          className="group flex w-full items-center justify-between rounded-xl bg-[#F2F7F5] hover:bg-[#E5F2EE] px-3 py-2.5 text-xs font-semibold text-[#0F4C40] ring-1 ring-[#0F4C40]/[0.12] active:scale-[0.985] transition-all"
         >
           <div className="flex items-center gap-2.5">
-            <div className="flex h-6.5 w-6.5 items-center justify-center rounded-lg bg-white text-[#0F4C40] ring-1 ring-[#0F4C40]/10 shadow-[0_1px_2px_rgba(15,23,42,0.04)] p-1">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-white text-[#0F4C40] ring-1 ring-[#0F4C40]/10 shadow-[0_1px_2px_rgba(15,23,42,0.04)] p-1">
               <QrCode className="h-3.5 w-3.5 stroke-[1.75]" />
             </div>
             <span>Generate Room QR</span>
@@ -212,7 +212,7 @@ export const StaffLayout: React.FC = () => {
       {mobileMenuOpen && (
         <div className="md:hidden fixed inset-0 z-50 flex">
           <div
-            className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs"
+            className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm"
             onClick={() => setMobileMenuOpen(false)}
           />
           <aside className="relative z-10 w-72 max-w-[84vw] h-full shadow-2xl animate-fadeIn">

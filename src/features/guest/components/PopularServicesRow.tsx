@@ -23,13 +23,16 @@ export const PopularServicesRow: React.FC<PopularServicesRowProps> = ({ items, o
             One-tap shortcuts guests order most
           </p>
         </div>
-        <span className="text-[11px] font-medium text-slate-400">
+        <span className="lg:hidden text-[11px] font-medium text-slate-400">
           Swipe &rarr;
+        </span>
+        <span className="hidden lg:inline-block text-[11px] font-medium text-slate-400">
+          Instant dispatch
         </span>
       </div>
 
       {/* Mobile: Native Horizontal Snap-Carousel | Desktop: Clean 4-Column Grid */}
-      <div className="no-scrollbar flex lg:grid lg:grid-cols-4 gap-3 overflow-x-auto snap-x snap-mandatory -mx-4 px-4 sm:mx-0 sm:px-0 pb-1">
+      <div className="no-scrollbar flex lg:grid lg:grid-cols-4 gap-3 overflow-x-auto snap-x snap-mandatory scroll-pl-4 -mx-4 px-4 sm:mx-0 sm:px-0 sm:scroll-pl-0 pb-1">
         {items.map(item => (
           <button
             key={item.id}

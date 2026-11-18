@@ -132,46 +132,53 @@ export const LocalProvidersSection: React.FC<LocalProvidersSectionProps> = ({
           }}
           className="bezel-core group relative overflow-hidden rounded-[1.15rem] border border-slate-200/60 hover:border-[#0F4C40]/30 p-3.5 sm:p-5 transition-all duration-200 cursor-pointer active:scale-[0.995]"
         >
-          <div className="flex items-start justify-between gap-3">
-            {/* Left: Machined 2x2 Icon Grid + Concise Info */}
-            <div className="flex items-start gap-3 min-w-0">
-              <div className="grid grid-cols-2 gap-1 p-1.5 rounded-xl bg-[#F6F8FA] ring-1 ring-slate-900/[0.05] shrink-0 mt-0.5">
-                <div className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-md bg-amber-50 text-amber-600">
-                  <Car className="h-3 w-3 stroke-[1.75]" />
+          <div className="space-y-2.5 sm:space-y-0 sm:flex sm:items-center sm:justify-between sm:gap-4">
+            {/* Top Row on Mobile: Icon Grid + Title + Slim Details Pill */}
+            <div className="flex items-center justify-between gap-3 sm:flex-1 sm:min-w-0">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="grid grid-cols-2 gap-1 p-1.5 rounded-xl bg-[#F6F8FA] ring-1 ring-slate-900/[0.05] shrink-0">
+                  <div className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-md bg-amber-50 text-amber-600">
+                    <Car className="h-3 w-3 stroke-[1.75]" />
+                  </div>
+                  <div className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-md bg-[#ECF5F2] text-[#0F4C40]">
+                    <Coffee className="h-3 w-3 stroke-[1.75]" />
+                  </div>
+                  <div className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-md bg-rose-50 text-rose-600">
+                    <UtensilsCrossed className="h-3 w-3 stroke-[1.75]" />
+                  </div>
+                  <div className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-md bg-sky-50 text-sky-600">
+                    <ShoppingBag className="h-3 w-3 stroke-[1.75]" />
+                  </div>
                 </div>
-                <div className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-md bg-[#ECF5F2] text-[#0F4C40]">
-                  <Coffee className="h-3 w-3 stroke-[1.75]" />
-                </div>
-                <div className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-md bg-rose-50 text-rose-600">
-                  <UtensilsCrossed className="h-3 w-3 stroke-[1.75]" />
-                </div>
-                <div className="flex h-5 w-5 sm:h-6 sm:w-6 items-center justify-center rounded-md bg-sky-50 text-sky-600">
-                  <ShoppingBag className="h-3 w-3 stroke-[1.75]" />
+
+                <div className="min-w-0">
+                  <h3 className="text-[13.5px] sm:text-[15px] font-semibold tracking-[-0.015em] text-slate-900 group-hover:text-[#0F4C40] transition-colors leading-snug">
+                    {cardTitle}
+                  </h3>
+                  <p className="hidden sm:block text-xs text-slate-500 leading-relaxed line-clamp-2 max-w-xl mt-0.5">
+                    {cardDesc}
+                  </p>
                 </div>
               </div>
 
-              <div className="min-w-0 space-y-1">
-                <h3 className="text-[13.5px] sm:text-[15px] font-semibold tracking-[-0.015em] text-slate-900 group-hover:text-[#0F4C40] transition-colors leading-snug">
-                  {cardTitle}
-                </h3>
-                <p className="text-[11.5px] sm:text-xs text-slate-500 leading-relaxed line-clamp-2 max-w-xl">
-                  {cardDesc}
-                </p>
-              </div>
+              {/* Mobile-inline & Desktop-right Details Pill */}
+              <button
+                type="button"
+                onClick={e => {
+                  e.stopPropagation();
+                  setMenuOpen(true);
+                }}
+                className="shrink-0 inline-flex items-center gap-1 rounded-full bg-[#0F4C40] hover:bg-[#0B3B31] text-white h-8 sm:h-9 px-3 sm:px-4 text-[11px] sm:text-xs font-semibold shadow-[0_2px_10px_-2px_rgba(15,76,64,0.4)] transition-all active:scale-95"
+              >
+                <span>Details</span>
+                <ChevronRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
+              </button>
             </div>
 
-            {/* Right: Slim Machined Details Pill */}
-            <button
-              type="button"
-              onClick={e => {
-                e.stopPropagation();
-                setMenuOpen(true);
-              }}
-              className="shrink-0 inline-flex items-center gap-1 rounded-full bg-[#0F4C40] hover:bg-[#0B3B31] text-white h-8 sm:h-9 px-3 sm:px-4 text-[11px] sm:text-xs font-semibold shadow-[0_2px_10px_-2px_rgba(15,76,64,0.4)] transition-all active:scale-95"
-            >
-              <span>Details</span>
-              <ChevronRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
-            </button>
+            {/* Full-width breathable description on mobile */}
+            <p className="sm:hidden text-[11.5px] text-slate-500 leading-relaxed">
+              {cardDesc}
+            </p>
           </div>
 
           {/* Instant 1-Tap Quick Dial Chips Row (Tap to call directly without opening modal) */}
@@ -236,7 +243,7 @@ export const LocalProvidersSection: React.FC<LocalProvidersSectionProps> = ({
                   placeholder="Search rides, pharmacy, coffee, food..."
                   value={modalSearch}
                   onChange={e => setModalSearch(e.target.value)}
-                  className="w-full rounded-xl bg-[#F6F8FA] pl-8.5 pr-3 py-2 text-xs text-slate-900 placeholder:text-slate-400 ring-1 ring-slate-900/[0.06] focus:ring-[#0F4C40]/40 focus:bg-white focus:outline-none transition-all"
+                  className="w-full rounded-xl bg-[#F6F8FA] pl-9 pr-3 py-2 text-xs text-slate-900 placeholder:text-slate-400 ring-1 ring-slate-900/[0.06] focus:ring-[#0F4C40]/40 focus:bg-white focus:outline-none transition-all"
                 />
               </div>
             )}

@@ -267,7 +267,7 @@ export const ApartmentQRCodesPage: React.FC = () => {
       <div className="porcelain-card rounded-2xl border border-slate-200/75 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-start sm:items-center gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-rose-50 ring-1 ring-rose-200/70 text-rose-600">
-            <Cross className="h-4.5 w-4.5" />
+            <Cross className="h-[18px] w-[18px]" />
           </div>
           <div>
             <div className="flex flex-wrap items-center gap-2">

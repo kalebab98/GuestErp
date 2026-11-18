@@ -286,14 +286,14 @@ export const AllRequestsPage: React.FC<AllRequestsPageProps> = ({
                         <Button
                           size="sm"
                           variant="outline"
-                          className="h-7.5 text-xs px-2.5 rounded-lg border-slate-200"
+                          className="h-8 text-xs px-2.5 rounded-lg border-slate-200"
                           onClick={() => setAssignModalReq(req)}
                         >
                           Assign
                         </Button>
                         <Button
                           size="sm"
-                          className="h-7.5 text-xs px-2.5 rounded-lg bg-[#11574A] hover:bg-[#0D443A] text-white"
+                          className="h-8 text-xs px-2.5 rounded-lg bg-[#0F4C40] hover:bg-[#0B3B31] text-white"
                           onClick={() => setStatusModalReq(req)}
                         >
                           Update
